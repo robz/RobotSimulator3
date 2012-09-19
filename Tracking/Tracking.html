@@ -1,0 +1,16 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="style.css"/>	
+<script type="text/javascript" src="code/main.js"></script>
+<script type="text/javascript" src="code/sylvester.js"></script>
+<script type="text/javascript" src="../Navigation/code/drawing_functions.js"></script>
+<script type="text/javascript" src="../Navigation/code/geometry.js"></script>
+</head>
+<body>
+	<h2>Tracking with a Kalman filter</h2>
+	<h3>move mouse around in gray area</h3>
+	<canvas width=1000 height=600 id="canvas" onmousemove=mouseMoved(event) tabindex=1></canvas>
+	<h4>For the curious:</h4>
+	<p>This Kalman filter uses a GPS-like sensor, which provides x and y positional data from a circular gaussian with a mean at the true mouse position and radial variance of ~50 pixels, updated at 20 Hz. The filter uses that data to estimate position, velocity, and acceleration of the mouse pointer. The filter's control input is ignored; instead, the movement of the mouse is accommodated by callibrating process noise.<br/> View the source for details.</p>
+</body>
+</html>
