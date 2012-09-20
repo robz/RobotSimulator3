@@ -1,10 +1,34 @@
 var PI = Math.PI, DELTA_ALPHA = PI/20, DELTA_V = .005, 
 	KEY_w = 87, KEY_s = 83, KEY_a = 65, KEY_d = 68, KEY_space = 32, KEY_e = 69;
 
-var robot, timekeeper;
+var robot, timekeeper, programField;
+
+var programReloaded = false, programText;
 
 window.onload = function() 
 {
+    
+    programField = document.getElementById("programField");
+    init_robot();
+    
+    var setupProgramField = function(xmlhttp_request) {
+        programField.value = xmlhttp_request.responseText;
+        setInterval(program_iteration, 100);
+    }
+    programField.value = sendRequest("code/default_program.js", setupProgramField);
+}
+
+function program_iteration() {
+    if (!programReloaded) {
+        programText = programField.value;
+        programReloaded = true;
+    }
+    
+    eval(programText);
+    cp_loop();
+}
+
+function init_robot() {
 	width = 40*SCALE;
 	length = 40*SCALE;
 	startx = 300/2;
@@ -19,13 +43,12 @@ window.onload = function()
 	setInterval(paintCanvas, 30);
 }
 
-function keydown(event) 
+function btnclick(event) 
 {
-    console.log("hi!");
-	keydown_tank(event, robot);
+    programReloaded = false;
 }
 
-function keydown_tank(event, my_robot) 
+function keydown(event) 
 {
 	var key = event.which;
 	
@@ -44,14 +67,14 @@ function keydown_tank(event, my_robot)
 		delta_wheel1_velocity = -DELTA_V;
 		delta_wheel2_velocity = DELTA_V;
 	} else if (key == KEY_space) {
-		delta_wheel1_velocity = -my_robot.wheel1_velocity;
-		delta_wheel2_velocity = -my_robot.wheel2_velocity;
+		delta_wheel1_velocity = -robot.wheel1_velocity;
+		delta_wheel2_velocity = -robot.wheel2_velocity;
 	} else {
 		return;
 	}
 	
-	my_robot.update();
-	my_robot.accelerate_wheels(delta_wheel1_velocity, delta_wheel2_velocity); 
+	robot.update();
+	robot.accelerate_wheels(delta_wheel1_velocity, delta_wheel2_velocity); 
 }
 
 function paintCanvas() 
