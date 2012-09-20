@@ -8,11 +8,13 @@
 </head>
 <body>
 	<h2>Coding</h2>
+	<p>Press *load* to run the program on the robot. Then press *stop*, and click the right panel to control the robot manually with w/a/s/d/space.
 	<div id=container>
 	<canvas id="canvas" width=500 height=600 onkeydown=keydown(event) tabindex=1></canvas>
 	<div id="leftpanel">
         <textarea id="programField">hi</textarea>
-        <button id="loadBtn" onclick=btnclick(event)>load program</button>
+        <button id="loadBtn" class="btn" onclick=loadBtnClicked(event)>load</button>
+        <button id="pauseBtn" class="btn" onclick=pauseBtnClicked(event)>stop</button>
     </div>   
     </div> 
 </body>

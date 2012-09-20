@@ -13,6 +13,7 @@ var gametime;
 
 function gametime_timekeeper() {
 	return {
+		paused: false,
 		init: function() {
 			gametime = 0;
 		},
@@ -20,7 +21,15 @@ function gametime_timekeeper() {
 			return gametime;
 		},
 		update: function(inc) {
-			gametime += inc;
-		}
+			if (!this.paused) {
+				gametime += inc;
+			}
+		},
+		pause: function() {
+			this.paused = true;
+		},
+		unpause: function() {
+			this.paused = false;
+		}	
 	};
 }
