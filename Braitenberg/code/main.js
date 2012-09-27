@@ -36,12 +36,12 @@ window.onload = function()
     }
     
     sources.push({
-            variance : SOURCE_VAR,
-            x : mouse.x,
-            y : mouse.y
-        });
+        variance : SOURCE_VAR,
+        x : mouse.x,
+        y : mouse.y
+    });
     
-    var flag = false;
+    var numExplorersWithSources = 1;
     robots = new Array(NUM_ROBOTS);
     for (var i = 0; i < NUM_ROBOTS; i++) {
         startx = Math.random()*(CANVAS_WIDTH-200)+100;
@@ -49,28 +49,28 @@ window.onload = function()
         startdir = Math.random()*2*PI;
         robots[i] = tank_robot(startx, starty, startdir, 0, 0, width, length, 0, timekeeper);
         
-        var sources_temp = sources;
+        var robot_sources = sources;
         
         robots[i].braitenberg_type = Math.round(i*4/NUM_ROBOTS - .5);
         
-        if (!flag && robots[i].braitenberg_type == EXPLORE) {
+        if (numExplorersWithSources > 0 && robots[i].braitenberg_type == EXPLORE) {
             robots[i].source_marked = true;
             
+            // duplicate sources list but without the source attached to this robot
             var new_sources = [];
             for (var j = 1; j < sources.length; j++) {
                 new_sources.push(sources[j]);
             }
-            sources_temp = new_sources;
+            robot_sources = new_sources;
             
-            flag = true;
-            
+            numExplorersWithSources--;
         }
         
-        var lightsensor1 = light_sensor(sources_temp,
+        var lightsensor1 = light_sensor(robot_sources,
             robots[i], my_atan(robots[i].width/2, robots[i].length), 
             Math.sqrt(robots[i].width*robots[i].width + robots[i].length*robots[i].length/4));
 
-        var lightsensor2 = light_sensor(sources_temp,
+        var lightsensor2 = light_sensor(robot_sources,
             robots[i], my_atan(-robots[i].width/2, robots[i].length), 
             Math.sqrt(robots[i].width*robots[i].width + robots[i].length*robots[i].length/4));
         
@@ -84,14 +84,21 @@ window.onload = function()
 }
 
 function mouseMoved(event) {
-    if(event.offsetX) {
+    if (!mouse) {
+        return;
+    }
+
+    if (event.offsetX !== undefined) {
         mouse.x = event.offsetX;
         mouse.y = event.offsetY;
+    } else if (event.layerX !== undefined) {
+        mouse.x = event.layerX - canvas.offsetLeft;
+        mouse.y = event.layerY - canvas.offsetTop;
+    } else {
+        console.error("can't read mouse values!");
+        return;
     }
-    else if(event.layerX) {
-        mouse.x = event.layerX-canvas.offsetLeft;
-        mouse.y = event.layerY-canvas.offsetTop;
-    }
+    
     sources[NUM_SOURCES-1].x = mouse.x;
     sources[NUM_SOURCES-1].y = mouse.y;
 }
@@ -163,7 +170,6 @@ function paintCanvas()
         robots[j].draw(context, false);
     
         if (robots[j].source_marked) {
-            console.log("hi!");
             sources[0].x = robots[j].x+robots[j].length*Math.cos(robots[j].heading)/2;
             sources[0].y = robots[j].y+robots[j].length*Math.sin(robots[j].heading)/2;
         }
