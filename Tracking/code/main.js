@@ -7,7 +7,6 @@ var u, F, H, R, Q, I;
 
 var oldTime, started;
 
-
 window.onload = function() 
 {
 	canvas = document.getElementById("canvas");
@@ -21,6 +20,7 @@ window.onload = function()
 	mouse = create_point(0, 0);
 	
 	xy = $M([[0], [0], [0], [0], [0], [0]]);
+	
 	Pxy = $M([[1000,0,0,0,0,0], 
 			  [0,1000,0,0,0,0], 
 			  [0,0,1000,0,0,0], 
@@ -29,9 +29,12 @@ window.onload = function()
 			  [0,0,0,0,0,1000]]);
 	
 	u = $M([[0], [0], [0], [0], [0], [0]]), 		// external motion (control vector)
+	
 	H = $M([[1,0,0,0,0,0],
 			[0,0,0,1,0,0]]), 						// measurement function
+			
 	R = $M([[VAR, 0],[0, VAR]]), 								// measurement uncertainty 
+	
 	Q = $M([[1e-6,0,0,0,0,0], 
 			[0,1e-12,0,0,0,0], 
 			[0,0,1e-10,0,0,0],
@@ -110,7 +113,6 @@ function kalman_iteration() {
 		xy = xy.add(K.multiply(error));
 		Pxy = (I.subtract(K.multiply(H))).multiply(Pxy);
 		
-		//console.log(matrixStr(Pxy));
 		// prediction
 		xy = (F.multiply(xy)).add(u);
 		Pxy = F.multiply(Pxy.multiply(F.transpose())).add(Q);

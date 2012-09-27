@@ -1,7 +1,13 @@
-var PI = Math.PI, DELTA_ALPHA = PI/20, DELTA_V = .005, 
+var PI = Math.PI, MAX_V = .1, DELTA_ALPHA = PI/20, DELTA_V = .005, 
 	KEY_w = 87, KEY_s = 83, KEY_a = 65, KEY_d = 68, KEY_space = 32, KEY_e = 69;
 
 var robots, timekeeper;
+
+var robot_colors = [
+        "blue",
+        "green",
+        "orange"
+    ];
 
 window.onload = function() 
 {
@@ -122,6 +128,7 @@ function paintCanvas()
 		context.fillRect(0, 0, canvas.width, canvas.height);
 		
 		robots[index].update();
+		context.strokeStyle = robot_colors[index];
 		robots[index].draw(context);
 	}
 }

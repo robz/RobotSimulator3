@@ -1,5 +1,5 @@
 var ACKERMAN = 0, TANK = 1, CRAB = 2;
-var MAX_ALPHA_ACKERMAN = PI/3, MAX_ALPHA_CRAB = 3*PI/4, MAX_V = .1,
+var MAX_ALPHA_ACKERMAN = PI/3, MAX_ALPHA_CRAB = 3*PI/4, 
     SCALE = 1, WHEEL_WIDTH = 4*SCALE, WHEEL_LENGTH = 15*SCALE;
 
 // wheels and corners are created here to avoid allocating memory dynamically
@@ -308,34 +308,36 @@ function tank_robot(x, y, heading, wheel1_velocity, wheel2_velocity, length, wid
                     y: c.y + (this.width/2)*sin(this.heading - PI/2)};
         },
         
-        draw : function(context) {
+        draw : function(context, onlyDrawCaster) {
             this.get_corners();
-            this.get_wheels(corners);
-            var caster = this.get_caster(corners);
             
-            context.lineWidth = 3;
-            context.strokeStyle = "green";
-            context.beginPath();
-            context.moveTo(corners[0].x, corners[0].y);
-            for(i = 1; i < 4; i++) {
-                context.lineTo(corners[i].x, corners[i].y);
-            }
-            context.closePath();
-            context.stroke();
-            
-            context.lineWidth = 1;
-            context.strokeStyle = "black";
-            for (j = 0; j < 2; j++) {
-                var wheel = wheels[j];
+            if (!onlyDrawCaster) { 
+                this.get_wheels(corners);
+                
+                context.lineWidth = 3;
                 context.beginPath();
-                context.moveTo(wheel[0].x, wheel[0].y);
+                context.moveTo(corners[0].x, corners[0].y);
                 for(i = 1; i < 4; i++) {
-                    context.lineTo(wheel[i].x, wheel[i].y);
+                    context.lineTo(corners[i].x, corners[i].y);
                 }
                 context.closePath();
                 context.stroke();
+                
+                context.lineWidth = 1;
+                context.strokeStyle = "black";
+                for (j = 0; j < 2; j++) {
+                    var wheel = wheels[j];
+                    context.beginPath();
+                    context.moveTo(wheel[0].x, wheel[0].y);
+                    for(i = 1; i < 4; i++) {
+                        context.lineTo(wheel[i].x, wheel[i].y);
+                    }
+                    context.closePath();
+                    context.stroke();
+                }
             }
             
+            var caster = this.get_caster(corners);
             context.beginPath();
             context.arc(caster.x, caster.y, WHEEL_WIDTH, 0, 2*PI, false);
             context.stroke();
