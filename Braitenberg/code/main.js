@@ -1,14 +1,14 @@
 var PI = Math.PI, MAX_V = .5, DELTA_ALPHA = PI/20, DELTA_V = .005, CANVAS_WIDTH, CANVAS_HEIGHT, 
     KEY_w = 87, KEY_s = 83, KEY_a = 65, KEY_d = 68, KEY_space = 32, KEY_e = 69;
 
-var FEAR = 0, AGGRESSION = 1, LOVE = 2, EXPLORE = 3;
+var NUM_ROBOTS = 50, NUM_SOURCES = 4, SOURCE_VAR = 70;
+var FEAR = 0, HATE = 1, LOVE = 2, EXPLORE = 3;
 var braitenberg_colors = [
         "black",
         "red",
         "blue",
         "green"
     ];
-var NUM_ROBOTS = 50, NUM_SOURCES = 4, SOURCE_VAR = 70;
 
 var robots, timekeeper, mouse;
 
@@ -109,7 +109,7 @@ function program_loop(robot) {
     if (robot.braitenberg_type == FEAR) {
         robot.wheel1_velocity = sense1;
         robot.wheel2_velocity = sense2;
-    } else if (robot.braitenberg_type == AGGRESSION) {
+    } else if (robot.braitenberg_type == HATE) {
         robot.wheel1_velocity = sense2;
         robot.wheel2_velocity = sense1;
     } else if (robot.braitenberg_type == LOVE) {
@@ -164,8 +164,8 @@ function paintCanvas()
     
         if (robots[j].source_marked) {
             console.log("hi!");
-            sources[0].x = robots[j].x;
-            sources[0].y = robots[j].y;
+            sources[0].x = robots[j].x+robots[j].length*Math.cos(robots[j].heading)/2;
+            sources[0].y = robots[j].y+robots[j].length*Math.sin(robots[j].heading)/2;
         }
     }
 }
