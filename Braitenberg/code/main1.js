@@ -1,7 +1,8 @@
 var PI = Math.PI, MAX_V = .5, DELTA_ALPHA = PI/20, DELTA_V = .005, CANVAS_WIDTH, CANVAS_HEIGHT, 
     KEY_w = 87, KEY_s = 83, KEY_a = 65, KEY_d = 68, KEY_space = 32, KEY_e = 69;
 
-var NUM_ROBOTS = 50, NUM_SOURCES = 4, SOURCE_VAR = 70;
+var NUM_ROBOTS = 50, NUM_SOURCES = 4, SOURCE_VAR = 70,
+    NUM_EXPLORER_SOURCES = 3;
 var FEAR = 0, HATE = 1, LOVE = 2, EXPLORE = 3;
 var braitenberg_colors = [
         "black",
@@ -10,7 +11,7 @@ var braitenberg_colors = [
         "green"
     ];
 
-var robots, timekeeper, mouse;
+var robots, timekeeper, mouse, sources;
 
 window.onload = function() 
 {
@@ -41,7 +42,7 @@ window.onload = function()
         y : mouse.y
     });
     
-    var numExplorersWithSources = 1;
+    var explorer_sources = 0;
     robots = new Array(NUM_ROBOTS);
     for (var i = 0; i < NUM_ROBOTS; i++) {
         startx = Math.random()*(CANVAS_WIDTH-200)+100;
@@ -53,17 +54,19 @@ window.onload = function()
         
         robots[i].braitenberg_type = Math.round(i*4/NUM_ROBOTS - .5);
         
-        if (numExplorersWithSources > 0 && robots[i].braitenberg_type == EXPLORE) {
-            robots[i].source_marked = true;
+        if (explorer_sources < NUM_EXPLORER_SOURCES && robots[i].braitenberg_type == EXPLORE) {
+            console.log("hi?");
+            robots[i].source_num = explorer_sources;
             
             // duplicate sources list but without the source attached to this robot
             var new_sources = [];
-            for (var j = 1; j < sources.length; j++) {
-                new_sources.push(sources[j]);
+            for (var j = 0; j < sources.length; j++) {
+                if (j != explorer_sources)
+                    new_sources.push(sources[j]);
             }
             robot_sources = new_sources;
             
-            numExplorersWithSources--;
+            explorer_sources++;
         }
         
         var lightsensor1 = light_sensor(robot_sources,
@@ -127,12 +130,21 @@ function program_loop(robot) {
         robot.wheel2_velocity = 1 - sense1;
     } 
     
-    if (robot.source_marked) {
+    if (robot.source_num !== undefined) {
         robot.wheel1_velocity *= MAX_V/2;
         robot.wheel2_velocity *= MAX_V/2;
     } else {
         robot.wheel1_velocity *= MAX_V;
         robot.wheel2_velocity *= MAX_V;
+    }
+}
+
+function drawSources(context, sources) {
+    for (var i = 0; i < sources.length; i++) {
+        context.beginPath();
+        context.arc(sources[i].x, sources[i].y,
+                    sources[i].variance/5, 0, 2*PI, false);
+        context.fill();
     }
 }
 
@@ -145,9 +157,7 @@ function paintCanvas()
     context.fillRect(0, 0, canvas.width, canvas.height);
     
     context.fillStyle = "orange";
-    for (var i = 0; i < robots[0].sensors.length; i++) {
-        robots[0].sensors[i].drawSources(context);
-    }
+    drawSources(context, sources);
     
     for (var j = 0; j < robots.length; j++) {
         context.strokeStyle = braitenberg_colors[robots[j].braitenberg_type];
@@ -155,23 +165,24 @@ function paintCanvas()
         
         // loop around
         
-        if (robots[j].x < -CANVAS_WIDTH/2) {
-            robots[j].x += CANVAS_WIDTH+CANVAS_WIDTH/2+CANVAS_WIDTH/4;
-        } else if (robots[j].x > CANVAS_WIDTH+CANVAS_WIDTH/2) {
-            robots[j].x -= (CANVAS_WIDTH+CANVAS_WIDTH/2+CANVAS_WIDTH/4);
+        if (robots[j].x < 0) {
+            robots[j].x += CANVAS_WIDTH;
+        } else if (robots[j].x > CANVAS_WIDTH) {
+            robots[j].x -= CANVAS_WIDTH;
         }
         
-        if (robots[j].y < -CANVAS_HEIGHT/2) {
-            robots[j].y += CANVAS_HEIGHT+CANVAS_HEIGHT/2+CANVAS_HEIGHT/4;
-        } else if (robots[j].y > CANVAS_HEIGHT+CANVAS_HEIGHT/2) {
-            robots[j].y -= (CANVAS_HEIGHT+CANVAS_HEIGHT/2+CANVAS_HEIGHT/4);
+        if (robots[j].y < 0) {
+            robots[j].y += CANVAS_HEIGHT;
+        } else if (robots[j].y > CANVAS_HEIGHT) {
+            robots[j].y -= CANVAS_HEIGHT;
         }
         
         robots[j].draw(context, false);
     
-        if (robots[j].source_marked) {
-            sources[0].x = robots[j].x+robots[j].length*Math.cos(robots[j].heading)/2;
-            sources[0].y = robots[j].y+robots[j].length*Math.sin(robots[j].heading)/2;
+        if (robots[j].source_num !== undefined) {
+            console.log("hi??");
+            sources[robots[j].source_num].x = robots[j].x+robots[j].length*Math.cos(robots[j].heading)/2;
+            sources[robots[j].source_num].y = robots[j].y+robots[j].length*Math.sin(robots[j].heading)/2;
         }
     }
 }

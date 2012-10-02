@@ -15,7 +15,7 @@ function light_sensor(sources, robot, angle, dist) {
                 this.val += this.calcVal(sources[i], this.x, this.y);
             }
             this.val /= .9; // allow for saturation
-            if (this.val > 1) this.val = 1;
+            if (this.val > 1) return 1;
         },
 
         calcVal : function(source, x, y) {
@@ -30,15 +30,6 @@ function light_sensor(sources, robot, angle, dist) {
         
         getVal : function() {
             return val;
-        },
-
-        drawSources : function(context) {
-            for (var i = 0; i < this.sources.length; i++) {
-                context.beginPath();
-                context.arc(this.sources[i].x, this.sources[i].y,
-                     this.sources[i].variance/5, 0, 2*PI, false);
-                context.fill();
-            }
         },
 
         draw : function(context) {
