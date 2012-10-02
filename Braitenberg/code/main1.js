@@ -29,18 +29,14 @@ window.onload = function()
     
     sources = [];
     for(var i = 0; i < NUM_SOURCES-1; i++) {
-        sources.push({
-            variance : SOURCE_VAR,
-            x : Math.random()*(CANVAS_WIDTH-SOURCE_VAR)+.5*SOURCE_VAR,
-            y : Math.random()*(CANVAS_HEIGHT-SOURCE_VAR)+.5*SOURCE_VAR
-        });
+        sources.push(light_source(
+            Math.random()*(CANVAS_WIDTH-SOURCE_VAR)+.5*SOURCE_VAR,
+            Math.random()*(CANVAS_HEIGHT-SOURCE_VAR)+.5*SOURCE_VAR, 
+            SOURCE_VAR
+        ));
     }
     
-    sources.push({
-        variance : SOURCE_VAR,
-        x : mouse.x,
-        y : mouse.y
-    });
+    sources.push(light_source(mouse.x, mouse.y, SOURCE_VAR))
     
     var explorer_sources = 0;
     robots = new Array(NUM_ROBOTS);
@@ -55,7 +51,6 @@ window.onload = function()
         robots[i].braitenberg_type = Math.round(i*4/NUM_ROBOTS - .5);
         
         if (explorer_sources < NUM_EXPLORER_SOURCES && robots[i].braitenberg_type == EXPLORE) {
-            console.log("hi?");
             robots[i].source_num = explorer_sources;
             
             // duplicate sources list but without the source attached to this robot
@@ -95,7 +90,7 @@ function mouseMoved(event) {
         mouse.x = event.offsetX;
         mouse.y = event.offsetY;
     } else if (event.layerX !== undefined) {
-        mouse.x = event.layerX - canvas.offsetLeft;
+        mouse.x = event.layerX - canvas.offsetLeft;	
         mouse.y = event.layerY - canvas.offsetTop;
     } else {
         console.error("can't read mouse values!");

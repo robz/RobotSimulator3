@@ -29,22 +29,18 @@ window.onload = function()
     
     sources = [];
     for (var i = 0; i < NUM_SOURCES; i++) {
-        sources.push({
-            variance : SOURCE_VAR,
-            x : CANVAS_WIDTH/2, 
-            y: CANVAS_HEIGHT/2
-        });
+        sources.push(light_source(CANVAS_WIDTH/2, CANVAS_HEIGHT/2, SOURCE_VAR));
     }
     
     for (var y = 0; y <= CANVAS_HEIGHT; y += CANVAS_HEIGHT) {
         for (var x = 0; x <= CANVAS_WIDTH; x += CANVAS_WIDTH/10) {
-            sources.push({ variance : SOURCE_VAR, x : x, y: y });
+            sources.push(light_source(x, y, SOURCE_VAR));
         }
     }
     
     for (var x = 0; x <= CANVAS_WIDTH; x += CANVAS_WIDTH) {
         for (var y = 0; y <= CANVAS_HEIGHT; y += CANVAS_HEIGHT/5) {
-            sources.push({ variance : SOURCE_VAR, x : x, y: y });
+            sources.push(light_source(x, y, SOURCE_VAR));
         }
     }
     

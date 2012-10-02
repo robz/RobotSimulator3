@@ -29,22 +29,20 @@ window.onload = function()
     
     sources = [];
     for (var i = 0; i < NUM_SOURCES; i++) {
-        sources.push({
-            variance : SOURCE_VAR,
-            x : CANVAS_WIDTH/2, 
-            y: CANVAS_HEIGHT/2
-        });
+        sources.push(light_source(
+            CANVAS_WIDTH/2, CANVAS_HEIGHT/2, SOURCE_VAR*3/4
+        ));
     }
     
     for (var y = 0; y <= CANVAS_HEIGHT; y += CANVAS_HEIGHT) {
         for (var x = 0; x <= CANVAS_WIDTH; x += CANVAS_WIDTH/10) {
-            sources.push({ variance : SOURCE_VAR, x : x, y: y });
+            sources.push(light_source(x, y, SOURCE_VAR));
         }
     }
     
     for (var x = 0; x <= CANVAS_WIDTH; x += CANVAS_WIDTH) {
         for (var y = 0; y <= CANVAS_HEIGHT; y += CANVAS_HEIGHT/5) {
-            sources.push({ variance : SOURCE_VAR, x : x, y: y });
+            sources.push(light_source(x, y, SOURCE_VAR));
         }
     }
     
@@ -120,28 +118,12 @@ function robot_loops() {
 function program_loop(robot) {
     var sense1 = robot.sensors[0].val,
         sense2 = robot.sensors[1].val;
+        
+	robot.wheel1_velocity = 1 - sense2;
+    robot.wheel2_velocity = 1 - sense1;
     
-    if (robot.braitenberg_type == FEAR) {
-        robot.wheel1_velocity = sense1;
-        robot.wheel2_velocity = sense2;
-    } else if (robot.braitenberg_type == HATE) {
-        robot.wheel1_velocity = sense2;
-        robot.wheel2_velocity = sense1;
-    } else if (robot.braitenberg_type == LOVE) {
-        robot.wheel1_velocity = 1 - sense1;
-        robot.wheel2_velocity = 1 - sense2;
-    } else if (robot.braitenberg_type == EXPLORE) {
-        robot.wheel1_velocity = 1 - sense2;
-        robot.wheel2_velocity = 1 - sense1;
-    } 
-    
-    if (robot.source_marked) {
-        robot.wheel1_velocity *= MAX_V/2;
-        robot.wheel2_velocity *= MAX_V/2;
-    } else {
-        robot.wheel1_velocity *= MAX_V;
-        robot.wheel2_velocity *= MAX_V;
-    }
+    robot.wheel1_velocity *= MAX_V;
+    robot.wheel2_velocity *= MAX_V;
 }
 
 function drawSources(context, sources) {

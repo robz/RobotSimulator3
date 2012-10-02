@@ -132,7 +132,7 @@ function create_lines(points) {
 	return lines;
 }
 
-// returns {point1, point2, theta}
+// returns {m, b, isV, p1, p2, theta}
 function create_line(point1, point2) {
 	var m = (point2.y - point1.y)/(point2.x - point1.x),
 	    isV = point1.x == point2.x;

@@ -1,11 +1,7 @@
-var PI = Math.PI, DELTA_ALPHA = PI/20, DELTA_V = .005, CANVAS_WIDTH, CANVAS_HEIGHT, 
+var PI = Math.PI, MAX_V = .1, DELTA_ALPHA = PI/20, DELTA_V = .005, CANVAS_WIDTH, CANVAS_HEIGHT, 
     KEY_w = 87, KEY_s = 83, KEY_a = 65, KEY_d = 68, KEY_space = 32, KEY_e = 69;
 
-var FEAR = 0, AGGRESSION = 1, LOVE = 2, EXPLORE = 3;
-var NUM_ROBOTS = 100, NUM_SOURCES = 1;
-var ROBOT_TYPE = FEAR;
-
-var robots, timekeeper;
+var robot, timekeeper, lightSource, obstacle;
 
 window.onload = function() 
 {
@@ -13,72 +9,83 @@ window.onload = function()
     CANVAS_WIDTH = canvas.width;
     CANVAS_HEIGHT = canvas.height;
 
-    width = 20*SCALE;
-    length = 20*SCALE;
+    width = 40*SCALE;
+    length = 40*SCALE;
     
     timekeeper = gametime_timekeeper();
     timekeeper.init();
 
-    var v = 100;
-    var sources = [];
-    for(var i = 0; i < NUM_SOURCES; i++) {
-        sources.push({
-            variance : v,
-            x : Math.random()*(CANVAS_WIDTH-v)+.5*v,
-            y : Math.random()*(CANVAS_HEIGHT-v)+.5*v
-        });
-    }
-    
-    robots = new Array(NUM_ROBOTS);
-    for (var i = 0; i < NUM_ROBOTS; i++) {
-        startx = Math.random()*(CANVAS_WIDTH-200)+100;
-        starty = Math.random()*(CANVAS_HEIGHT-200)+100;
-        startdir = Math.random()*2*PI;
-        robots[i] = tank_robot(startx, starty, startdir, 0, 0, width, length, 0, timekeeper);
-        
-        var lightsensor1 = light_sensor(sources,
-            robots[i], my_atan(robots[i].width/2, robots[i].length), 
-            Math.sqrt(robots[i].width*robots[i].width + robots[i].length*robots[i].length/4));
+    lightSource = light_source( 
+        Math.random()*(CANVAS_WIDTH-100)+50,
+        Math.random()*(CANVAS_HEIGHT-100)+50,
+        100
+    );
 
-        var lightsensor2 = light_sensor(sources,
-            robots[i], my_atan(-robots[i].width/2, robots[i].length), 
-            Math.sqrt(robots[i].width*robots[i].width + robots[i].length*robots[i].length/4));
+    obstacles = [
+        obstacle(create_polygon([
+            create_point(20,20), 
+            create_point(150,250),
+            create_point(200,150)])),
+        obstacle(create_polygon([
+            create_point(600, 50),
+            create_point(620, 200),
+            create_point(700, 210),
+            create_point(690, 43)]))];
+    
+    robot = tank_robot(
+        startx = Math.random()*(CANVAS_WIDTH-200)+100,
+        starty = Math.random()*(CANVAS_HEIGHT-200)+100,
+        startdir = Math.random()*2*PI,
+        0, 0, width, length, 0, timekeeper
+    );
         
-        robots[i].sensors.push(lightsensor1);
-        robots[i].sensors.push(lightsensor2);
-    }
+    robot.sensors = [
+        light_sensor(
+            [lightSource],
+            robot, 
+            0,
+            robot.length/2
+        ),
+        dist_sensor(
+            obstacles,
+            robot,
+            0,
+            robot.length/2,
+            0,
+            500
+        )];
 
     setInterval("timekeeper.update(10);", 10);
     setInterval(paintCanvas, 30);
-    setInterval(robot_loops, 100);
 }
 
-function robot_loops() {
-    for (var i = 0; i < robots.length; i++) {
-        program_loop(robots[i]);
-    }
-}
-
-function program_loop(robot) {
-    var sense1 = robot.sensors[0].val,
-        sense2 = robot.sensors[1].val;
+function keydown(event) 
+{
+      var key = event.which;
     
-    if (ROBOT_TYPE == FEAR) {
-        robot.wheel1_velocity = sense1;
-        robot.wheel2_velocity = sense2;
-    } else if (ROBOT_TYPE == AGGRESSION) {
-        robot.wheel1_velocity = sense2;
-        robot.wheel2_velocity = sense1;
-    } else if (ROBOT_TYPE == LOVE) {
-        robot.wheel1_velocity = 1 - sense1;
-        robot.wheel2_velocity = 1 - sense2;
-    } else if (ROBOT_TYPE == EXPLORE) {
-        robot.wheel1_velocity = 1 - sense2;
-        robot.wheel2_velocity = 1 - sense1;
-    } 
-
-    robot.wheel1_veloctiy *= (MAX_V/2);
-    robot.wheel1_veloctiy *= (MAX_V/2);
+      var delta_wheel1_velocity = 0, delta_wheel2_velocity = 0;
+    
+    if (key == KEY_w) {
+          delta_wheel1_velocity = DELTA_V;
+          delta_wheel2_velocity = DELTA_V;
+    } else if (key == KEY_s) {
+            delta_wheel1_velocity = -DELTA_V;
+            delta_wheel2_velocity = -DELTA_V;
+      } else if (key == KEY_a) {
+            delta_wheel1_velocity = DELTA_V;
+            delta_wheel2_velocity = -DELTA_V;
+      } else if (key == KEY_d) {
+            delta_wheel1_velocity = -DELTA_V;
+            delta_wheel2_velocity = DELTA_V;
+      } else if (key == KEY_space) {
+            delta_wheel1_velocity = -robot.wheel1_velocity;
+            delta_wheel2_velocity = -robot.wheel2_velocity;
+      } else {
+            return;
+      }
+    
+      robot.update();
+      robot.accelerate_wheels(delta_wheel1_velocity, delta_wheel2_velocity); 
 }
 
 function paintCanvas() 
@@ -88,15 +95,23 @@ function paintCanvas()
         
     context.fillStyle = "lightGray";
     context.fillRect(0, 0, canvas.width, canvas.height);
-    
-    for (var j = 0; j < robots.length; j++) {
-        robots[j].update();
-        robots[j].draw(context);
-    
-        for (var i = 0; i < robots[j].sensors.length; i++) {
-            robots[j].sensors[i].draw(context);
-        }
-    }
+ 
+    context.fillStyle = "orange"; 
+    lightSource.draw(context);
 
-    // console.log(lightsensor.val);
+    context.strokeStyle = "black";
+    context.lineWidth = 3;
+    for (var i = 0; i < obstacles.length; i++) {
+        obstacles[i].draw(context);
+    }
+ 
+    robot.update();
+    context.strokeStyle = "green";
+    robot.draw(context);
+     
+    context.fillStyle = "brown";
+    context.strokeStyle = "brown";
+    for (var i = 0; i < robot.sensors.length; i++) {
+        robot.sensors[i].draw(context);
+    }
 }
