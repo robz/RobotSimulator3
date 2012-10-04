@@ -63,6 +63,9 @@ function dist_sensor(obstacles, robot, offset_angle, offset_dist, offset_heading
             context.lineTo(this.x + this.val*Math.cos(this.heading), 
                            this.y + this.val*Math.sin(this.heading));
             context.stroke();   
+            
+            var dispval = Math.round(this.val*1000)/1000;
+            context.fillText(dispval, this.x, this.y);
         }
     }
 } 

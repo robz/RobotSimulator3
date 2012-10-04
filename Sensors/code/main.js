@@ -30,12 +30,19 @@ window.onload = function()
             create_point(600, 50),
             create_point(620, 200),
             create_point(700, 210),
-            create_point(690, 43)]))];
+            create_point(690, 43)])),
+        obstacle(create_polygon([
+            create_point(300, 500),
+            create_point(500, 450),
+            create_point(800, 500),
+            create_point(800, 670),
+            create_point(250, 650)]))
+    ];
     
     robot = tank_robot(
-        startx = Math.random()*(CANVAS_WIDTH-200)+100,
-        starty = Math.random()*(CANVAS_HEIGHT-200)+100,
-        startdir = Math.random()*2*PI,
+        CANVAS_WIDTH/2,
+        CANVAS_HEIGHT/2,
+        Math.random()*2*PI,
         0, 0, width, length, 0, timekeeper
     );
         
@@ -43,8 +50,14 @@ window.onload = function()
         light_sensor(
             [lightSource],
             robot, 
-            0,
-            robot.length/2
+            my_atan(-robot.width/2, robot.length),
+            Math.sqrt(robot.width*robot.width/4 + robot.length*robot.length)
+        ),
+        light_sensor(
+            [lightSource],
+            robot, 
+            my_atan(robot.width/2, robot.length),
+            Math.sqrt(robot.width*robot.width/4 + robot.length*robot.length)
         ),
         dist_sensor(
             obstacles,
@@ -109,8 +122,8 @@ function paintCanvas()
     context.strokeStyle = "green";
     robot.draw(context);
      
-    context.fillStyle = "brown";
-    context.strokeStyle = "brown";
+    context.fillStyle = "black";
+    context.strokeStyle = "black";
     for (var i = 0; i < robot.sensors.length; i++) {
         robot.sensors[i].draw(context);
     }
