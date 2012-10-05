@@ -108,6 +108,15 @@ function create_circle(point, radius) {
 	return {c:point, r:radius};
 }
 
+function create_boxpoly(startx, starty, width, height) {
+    return create_polygon([
+        create_point(startx, starty),
+        create_point(startx+width, starty),
+        create_point(startx+width, starty+height),
+        create_point(startx, starty+height)
+    ]);
+}
+
 // assumes points are in either clockwise or counter-clockwise order
 // returns {points, lines}
 function create_polygon(points) {
