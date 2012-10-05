@@ -2,7 +2,7 @@ var REPLACE_ROBOT_DYNAMICALLY = false;
 
 var COLS = 50, ROWS = 50, 
 	CANVAS_WIDTH, CANVAS_HEIGHT, CELL_WIDTH, CELL_HEIGHT,
-	PI = Math.PI, DELTA_V = .05;
+	PI = Math.PI, DELTA_V = .05, MAX_V = .1;
 
 var canvas, context;
 var grid, polygon, problem, path_lines, pid_goal, robot, time_keeper;
@@ -177,6 +177,7 @@ function paintCanvas() {
 	}
 	
 	robot.update();
+	context.strokeStyle = "green";
 	robot.draw(context);
 }
 
