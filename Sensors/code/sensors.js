@@ -17,33 +17,38 @@ function obstacle(polygon) {
     }
 }
 
-function dist_sensor(obstacles, robot, offset_angle, offset_dist, offset_heading, MAX_VAL) {
+function dist_sensor(obstacles, robot, offset_angle, offset_dist, offset_heading, MAX_VAL, rotvel) {
     return {
         x : robot.x + offset_dist*Math.cos(offset_angle + robot.heading),
         y : robot.y + offset_dist*Math.sin(offset_angle + robot.heading),
         heading : robot.heading + offset_heading,
-        oh : offset_heading,
-        od : offset_dist,
-        oa : offset_angle,
+        offset_heading : offset_heading,
+        offset_dist : offset_dist,
+        offset_angle : offset_angle,
         val: null,
         obstacles : obstacles,
         MAX_VAL : MAX_VAL,
+        rotvel: rotvel,
 
-        update : function(robot) {
-            this.x = robot.x + this.od*Math.cos(this.oa + robot.heading);
-            this.y = robot.y + this.od*Math.sin(this.oa + robot.heading);
-            this.heading = robot.heading + this.oh;
-            this.val = this.getVal(); 
+        update : function(robot, delta_time) {
+            this.x = robot.x + this.offset_dist*Math.cos(this.offset_angle + robot.heading);
+            this.y = robot.y + this.offset_dist*Math.sin(this.offset_angle + robot.heading);
+            this.offset_heading += this.rotvel*delta_time;
+            this.heading = robot.heading + this.offset_heading; 
+            this.val = this.getVal(this.x, this.y, this.heading, this.obstacles, this.MAX_VAL); 
         },
 
-        getVal : function() {
+        getVal : function(x, y, dir, obstacles, max_dist) {
             var laser = create_line_from_vector(
-                create_point(this.x, this.y), 
-                this.heading, 
-                CANVAS_WIDTH*2);
-            var mindist = this.MAX_VAL;
-            for (var i = 0; i < this.obstacles.length; i++) {
-                var polylines = this.obstacles[i].polygon.lines;
+                            create_point(x, y), 
+                            dir, 
+                            CANVAS_WIDTH*2
+                        );
+                        
+            var mindist = max_dist;
+            
+            for (var i = 0; i < obstacles.length; i++) {
+                var polylines = obstacles[i].polygon.lines;
                 for (var j = 0; j < polylines.length; j++) {
                     var intersection = lineSegmentIntersection(laser, polylines[j]);
                     if (intersection) {
@@ -54,18 +59,21 @@ function dist_sensor(obstacles, robot, offset_angle, offset_dist, offset_heading
                     }
                 }
             }
+            
             return mindist;
         },
 
-        draw : function(context) {
+        draw : function(context, verbose) {
             context.beginPath();
             context.moveTo(this.x, this.y);
             context.lineTo(this.x + this.val*Math.cos(this.heading), 
                            this.y + this.val*Math.sin(this.heading));
             context.stroke();   
             
-            var dispval = Math.round(this.val*1000)/1000;
-            context.fillText(dispval, this.x, this.y);
+            if (verbose) {
+                var dispval = Math.round(this.val*1000)/1000;
+                context.fillText(dispval, this.x, this.y);
+            }
         }
     }
 } 

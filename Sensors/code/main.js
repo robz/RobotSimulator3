@@ -65,7 +65,8 @@ window.onload = function()
             0,
             robot.length/2,
             0,
-            500
+            500,
+            0
         )];
 
     setInterval("timekeeper.update(10);", 10);

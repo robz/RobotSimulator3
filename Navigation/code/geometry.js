@@ -101,6 +101,16 @@ function create_line_from_vector(point, theta, mag) {
 	var farpoint = create_point(
 		point.x+mag*Math.cos(theta), 
 		point.y+mag*Math.sin(theta));
+		
+  var ongrid = (theta/Math.PI*2)%2;
+  if (ongrid == Math.round(ongrid)) {
+    if (ongrid == 0 || ongrid == 2) {
+      farpoint.y = point.y;
+    } else if (ongrid == 1 || ongrid == 3) {
+      farpoint.x = point.x;
+    } 
+  }
+  	
 	return create_line(point, farpoint);
 }
 

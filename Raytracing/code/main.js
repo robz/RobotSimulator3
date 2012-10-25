@@ -1,4 +1,4 @@
-var XCELLS = 100, YCELLS = 100; 
+var XCELLS = 20, YCELLS = 20; 
 var CANVAS_WIDTH, CANVAS_HEIGHT, CELL_WIDTH, CELL_HEIGHT;
 var bounding_grid;
 
@@ -23,9 +23,9 @@ window.onload=function() {
     bounding_grid = createBoundingGrid(XCELLS, YCELLS, CELL_WIDTH, CELL_HEIGHT);
   
     obstacles = [];
-    var r = 100, d = 400;
+    var r = 100, d = 100;
     context.strokeStyle = "black";
-    for (var i = 0; i < 1000; i++) {
+    for (var i = 0; i < 10; i++) {
         var seedx = Math.random()*(CANVAS_WIDTH-2*d)+d,
             seedy = Math.random()*(CANVAS_HEIGHT-2*d)+d,
             a1 = Math.random()*Math.PI*2/3,
@@ -42,45 +42,47 @@ window.onload=function() {
     context.strokeStyle = "lightGray";
     
     fillGrid(bounding_grid.grid, obstacles);
+    bounding_grid.draw(context);
 }
 
-function mouseclicked(event) {
+function mouse(event) {
     startp = {x: event.offsetX, y: event.offsetY};
     var context = document.getElementById("canvas").getContext("2d");
-    var totalrays = 360;
-    for (var i = 0; i < totalrays; i++) { 
-        var ray = createRay(startp.x, startp.y, 2*Math.PI*i/totalrays, 20);    
+    
+    var rays = new Array(360);
+    
+    for (var i = 0; i < rays.length; i++) { 
+        rays[i] = createRay(startp.x, startp.y, 2*Math.PI*i/rays.length, 20); 
+        rays[i].m = getDistance(rays[i]);
+    }
+    
+    drawRays(context, rays);
+}
 
-        ray.draw(context);    
-
-        var dist = getDistance(ray);
-
+function drawRays(context, rays) {
+    context.fillStyle = "white";
+    context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    
+    context.strokeStyle = "lightGray";
+    for (var i = 0; i < rays.length; i++) {
+        var ray = rays[i];
         context.beginPath();
         context.moveTo(startp.x, startp.y);
-        context.lineTo(startp.x + dist*Math.cos(ray.dir),
-                   startp.y + dist*Math.sin(ray.dir));
+        context.lineTo(startp.x + rays[i].m*Math.cos(rays[i].dir),
+                       startp.y + rays[i].m*Math.sin(rays[i].dir));
         context.stroke();
     }
-}
-/*
-function mousemoved(event) {
-    var ray = createRay(startp.x, startp.y, 
-                        my_atan(event.offsetY - startp.y, event.offsetX - startp.x),
-                        20);
     
-    var context = document.getElementById("canvas").getContext("2d");    
-
-    ray.draw(context);    
-
-    var dist = getDistanceOld(ray);
-
-    context.beginPath();
-    context.moveTo(startp.x, startp.y);
-    context.lineTo(startp.x + dist*Math.cos(ray.dir),
-                   startp.y + dist*Math.sin(ray.dir));
-    context.stroke();
+    context.strokeStyle = "black";
+    for (var i = 0; i < obstacles.length; i++) {
+        obstacles[i].draw(context);
+    }
+    
+    context.fillStyle = "black";
+    context.strokeStyle = "lightGray";
+    bounding_grid.draw(context);
 }
-*/
+
 function getDistanceOld(ray) {
     var mindist = 1000;
     for (var i = 0; i < obstacles.length; i++) {
@@ -100,10 +102,10 @@ function getDistanceOld(ray) {
 
 function getDistance(ray) {
     var cell = bounding_grid.getCell(ray);
-    var maxdist = 1000, pdist = {dist:0}, totaldist = 0, dist = maxdist;   
+    var maxdist = 1000, pdist = {val:0}, pstarted = {val:false}, totaldist = 0, dist = maxdist;   
  
     while (cell != null) { 
-        totaldist += pdist.dist;
+        totaldist += pdist.val;
         for (var i = 0; i < cell.obstacles.length; i++) {
             var poly = cell.obstacles[i].polygon;
             for (var j = 0; j < poly.lines.length; j++) {
@@ -116,7 +118,7 @@ function getDistance(ray) {
                 }
             }
         }
-        cell = traceToNextBoundary(ray, cell, maxdist-totaldist, pdist);
+        cell = traceToNextBoundary(ray, cell, maxdist-totaldist, pdist, pstarted);
     } 
     
     return dist;
@@ -135,29 +137,34 @@ function fillGrid(grid, obstacles) {
     }
 }
 
-function traceToNextBoundary(ray, cell, mindist, pdist, context) {
+function traceToNextBoundary(ray, cell, mindist, pdist, pstarted) {
     var intersection = null,
         intersectionIndex = -1;
     
     for (var i = 0; i < cell.lines.length; i++) {
         var p = lineSegmentIntersection(cell.lines[i], ray.line);
-
         if (p) {
             var dist = euclidDist(p, ray);
             if (dist > 0.001 && dist < mindist) {
                 mindist = dist;
                 intersection = p;
                 intersectionIndex = i;
+            } else if (dist <= 0.001 && !pstarted.val) {
+                mindist = dist;
+                intersection = p;
+                intersectionIndex = i;
             }
-        }
+        } 
     }
+   
+    pstarted.val = true;
    
     if (intersection) {
         ray.reinit(intersection);
         var cell = bounding_grid.getNextCell(cell, intersectionIndex);
  
         if (cell) {
-            pdist.dist = mindist;
+            pdist.val = mindist;
             return cell;
         } else {
             return null;

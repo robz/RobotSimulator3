@@ -223,7 +223,7 @@ function tank_robot(x, y, heading, wheel1_velocity, wheel2_velocity, length, wid
                 this.wheel2_velocity, this.length, this.width, this.last_time_updated);
             
             for (var i = 0; i < this.sensors.length; i++) {
-                this.sensors[i].update(this);
+                this.sensors[i].update(this, dt);
             }
         },
         

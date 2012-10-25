@@ -1,0 +1,23 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="style.css"/>	
+<script type="text/javascript" src="code/particle_filter.js"></script>
+<script type="text/javascript" src="code/main.js"></script>
+<script type="text/javascript" src="../Tracking/code/sylvester.js"></script>
+<script type="text/javascript" src="../Tracking/code/kalman_filter.js"></script>
+<script type="text/javascript" src="../Sensors/code/sensors.js"></script>
+<script type="text/javascript" src="../Steering/code/robot.js"></script>
+<script type="text/javascript" src="../Steering/code/time_keepers.js"></script>
+<script type="text/javascript" src="../Navigation/code/geometry.js"></script>
+<script type="text/javascript" src="../Navigation/code/drawing_functions.js"></script>
+<style>
+</style>
+</head>
+<body>
+	<h2>Localization</h2>
+	<h3>click on a panel then use w/a/s/d/space to navigate, 'e' to toggle the particle filter animation, or 'q' to toggle kalman filter animation</h3>
+	<canvas width=1000 height=700 id="canvas" onkeydown=keydown(event) tabindex=0></canvas>
+	<h4>For the curious:</h4>
+	<p>Localization here is done solely based on the readings of the spinning distance sensor. Distance, Angle offset pairs are sent into a particle filter, which randomly initialized 300 particles in around the center of the field. The particle filter loops over its particles and probabilistically attempts to find the location of the robot. Since it does not directly observe movement of the robot, the particle transition function includes a high variance of random movement, which results in a lot of noise even when averaging all the particles to form some best guess. So, x,y outputs of the particle filter are fed into a Kalman filter to get rid of the noise and better project the movement of the robot with calculating velocity and acceleration. The Kalman filter doesn't take into account anything but the x,y values given to it, so it compensates for lack of direct robot movement observation with a high process uncertainty.<br/> View the source for details.</p>
+</body>
+</html>
