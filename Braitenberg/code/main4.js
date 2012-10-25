@@ -1,4 +1,4 @@
-var PI = Math.PI, MAX_V = .5, DELTA_ALPHA = PI/20, DELTA_V = .005, CANVAS_WIDTH, CANVAS_HEIGHT, 
+var PI =` Math.PI, MAX_V = .5, DELTA_ALPHA = PI/20, DELTA_V = .005, CANVAS_WIDTH, CANVAS_HEIGHT, 
     KEY_w = 87, KEY_s = 83, KEY_a = 65, KEY_d = 68, KEY_space = 32, KEY_e = 69;
 
 var NUM_ROBOTS = 20, NUM_SOURCES = 1+NUM_ROBOTS, SOURCE_VAR = 60, 
@@ -32,18 +32,6 @@ window.onload = function()
         sources.push(light_source(
             CANVAS_WIDTH/2, CANVAS_HEIGHT/2, SOURCE_VAR*3/4
         ));
-    }
-    
-    for (var y = 0; y <= CANVAS_HEIGHT; y += CANVAS_HEIGHT) {
-        for (var x = 0; x <= CANVAS_WIDTH; x += CANVAS_WIDTH/10) {
-            sources.push(light_source(x, y, SOURCE_VAR));
-        }
-    }
-    
-    for (var x = 0; x <= CANVAS_WIDTH; x += CANVAS_WIDTH) {
-        for (var y = 0; y <= CANVAS_HEIGHT; y += CANVAS_HEIGHT/5) {
-            sources.push(light_source(x, y, SOURCE_VAR));
-        }
     }
     
     robots = new Array(NUM_ROBOTS);
@@ -82,6 +70,7 @@ window.onload = function()
         
         robots[i].sensors.push(lightsensor1);
         robots[i].sensors.push(lightsensor2);
+		robots[i].hp = 10;
     }
 
     setInterval("timekeeper.update(10);", 10);
@@ -109,9 +98,22 @@ function mouseMoved(event) {
     sources[NUM_SOURCES-1].y = mouse.y;
 }
 
+function validDNA(x, y, z) {
+	return 1 >= z && z >= -1
+		&& 1 >= x+z && x+z >= -1
+		&& 1 >= y+z && y+z >= -1
+		&& 1 >= x+y+z && x+y+z >= -1;
+}
+
 function robot_loops() {
     for (var i = 0; i < robots.length; i++) {
-        program_loop(robots[i]);
+		if (robots[i] != null) {
+			program_loop(robots[i]);
+			if (robots[i].hp <= 0) {
+				robots[i] = null;
+			}
+			if (robots[i].
+		}
     }
 }
 
