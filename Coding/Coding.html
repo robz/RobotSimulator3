@@ -1,20 +1,27 @@
 <html>
 <head>
 <link rel="stylesheet" type="text/css" href="style.css"/>	
+
 <script type="text/javascript" src="code/XMLRequest.js"></script>
 <script type="text/javascript" src="code/main.js"></script>
+<script type="text/javascript" src="../Sensors/code/sensors.js"></script>
+<script type="text/javascript" src="../Navigation/code/geometry.js"></script>
 <script type="text/javascript" src="../Steering/code/robot.js"></script>
 <script type="text/javascript" src="../Steering/code/time_keepers.js"></script>
+
+<script type="text/javascript" src="../external/codemirror-2.35/codemirror.js"></script>
+<script type="text/javascript" src="../external/codemirror-2.35/javascript.js"></script>
+<link rel="stylesheet" type="text/css" href="../external/codemirror-2.35/codemirror.css">
 </head>
 <body>
 	<h2>Coding</h2>
-	<p>Press *load* to run the program on the robot. Then press *stop*, and click the right panel to control the robot manually with w/a/s/d/space.
+	<p>Press "load"/"run"/"stop" to load/run/stop the program, or click on the animation and use w/a/s/d/space to navigate manually.
 	<div id=container>
-	<canvas id="canvas" width=500 height=600 onkeydown=keydown(event) tabindex=1></canvas>
+	<canvas id="canvas" width=500 height=600 tabindex=1 onkeydown=keydown(event)></canvas>
 	<div id="leftpanel">
-        <textarea id="programField">hi</textarea>
-        <button id="loadBtn" class="btn" onclick=loadBtnClicked(event)>load</button>
-        <button id="pauseBtn" class="btn" onclick=pauseBtnClicked(event)>stop</button>
+        <div class="code_field"><textarea id="programField">hi</textarea></div>
+        <button id="loadBtn" class="btn" onclick=loadBtnClicked(event)>LOAD</button>
+        <button id="pauseBtn" class="btn" onclick=pauseBtnClicked(event)>RUN</button>
     </div>   
     </div> 
 </body>

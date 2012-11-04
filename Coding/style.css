@@ -10,8 +10,12 @@
 }
 
 .btn {
-    width: 247;
-    height: 50;
+    width: 247px;
+    height: 50px;
+}
+
+.code_field {
+    text-align: left;
 }
 
 #leftpanel {

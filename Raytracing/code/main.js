@@ -25,7 +25,7 @@ window.onload=function() {
     obstacles = [];
     var r = 100, d = 100;
     context.strokeStyle = "black";
-    for (var i = 0; i < 10; i++) {
+    for (var i = 0; i < 100; i++) {
         var seedx = Math.random()*(CANVAS_WIDTH-2*d)+d,
             seedy = Math.random()*(CANVAS_HEIGHT-2*d)+d,
             a1 = Math.random()*Math.PI*2/3,
@@ -46,14 +46,27 @@ window.onload=function() {
 }
 
 function mouse(event) {
+    if (document.readyState !== "complete") {
+        return;
+    }
+
     startp = {x: event.offsetX, y: event.offsetY};
+
+    if(event.offsetX) {
+        startp = {x: event.offsetX, y: event.offsetY};
+    }
+    else if(event.layerX) {
+        startp = {x: event.layerX-canvas.offsetLeft, 
+                  y: event.layerY-canvas.offsetTop};
+    }
+    
     var context = document.getElementById("canvas").getContext("2d");
     
     var rays = new Array(360);
     
     for (var i = 0; i < rays.length; i++) { 
         rays[i] = createRay(startp.x, startp.y, 2*Math.PI*i/rays.length, 20); 
-        rays[i].m = getDistance(rays[i]);
+        rays[i].m = getDistanceOld(rays[i]);
     }
     
     drawRays(context, rays);
@@ -63,7 +76,7 @@ function drawRays(context, rays) {
     context.fillStyle = "white";
     context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     
-    context.strokeStyle = "lightGray";
+    context.strokeStyle = "darkGray";
     for (var i = 0; i < rays.length; i++) {
         var ray = rays[i];
         context.beginPath();

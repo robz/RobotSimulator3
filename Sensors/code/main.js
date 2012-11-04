@@ -75,31 +75,31 @@ window.onload = function()
 
 function keydown(event) 
 {
-      var key = event.which;
+    var key = event.which;
     
-      var delta_wheel1_velocity = 0, delta_wheel2_velocity = 0;
+    var delta_wheel1_velocity = 0, delta_wheel2_velocity = 0;
     
     if (key == KEY_w) {
-          delta_wheel1_velocity = DELTA_V;
-          delta_wheel2_velocity = DELTA_V;
+        delta_wheel1_velocity = DELTA_V;
+        delta_wheel2_velocity = DELTA_V;
     } else if (key == KEY_s) {
-            delta_wheel1_velocity = -DELTA_V;
-            delta_wheel2_velocity = -DELTA_V;
-      } else if (key == KEY_a) {
-            delta_wheel1_velocity = DELTA_V;
-            delta_wheel2_velocity = -DELTA_V;
-      } else if (key == KEY_d) {
-            delta_wheel1_velocity = -DELTA_V;
-            delta_wheel2_velocity = DELTA_V;
-      } else if (key == KEY_space) {
-            delta_wheel1_velocity = -robot.wheel1_velocity;
-            delta_wheel2_velocity = -robot.wheel2_velocity;
-      } else {
-            return;
-      }
+        delta_wheel1_velocity = -DELTA_V;
+        delta_wheel2_velocity = -DELTA_V;
+    } else if (key == KEY_a) {
+        delta_wheel1_velocity = DELTA_V;
+        delta_wheel2_velocity = -DELTA_V;
+    } else if (key == KEY_d) {
+        delta_wheel1_velocity = -DELTA_V;
+        delta_wheel2_velocity = DELTA_V;
+    } else if (key == KEY_space) {
+        delta_wheel1_velocity = -robot.wheel1_velocity;
+        delta_wheel2_velocity = -robot.wheel2_velocity;
+    } else {
+        return;
+    }
     
-      robot.update();
-      robot.accelerate_wheels(delta_wheel1_velocity, delta_wheel2_velocity); 
+    robot.update();
+    robot.accelerate_wheels(delta_wheel1_velocity, delta_wheel2_velocity); 
 }
 
 function paintCanvas() 
@@ -112,6 +112,17 @@ function paintCanvas()
  
     context.fillStyle = "orange"; 
     lightSource.draw(context);
+    
+    if (points && points.length != 0) {
+        context.strokeStyle = "blue";
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(points[0].x, points[0].y);
+        for (var i = 1; i < points.length; i++) {
+            context.lineTo(points[i].x, points[i].y);
+        }
+        context.stroke();
+    }
 
     context.strokeStyle = "black";
     context.lineWidth = 3;
@@ -129,3 +140,41 @@ function paintCanvas()
         robot.sensors[i].draw(context);
     }
 }
+
+/*
+//
+// Functions for creating a line
+//
+
+var mouseIsDown = false;
+
+function mousedown() {
+    mouseIsDown = true;
+    points = [];
+}
+
+function mouseup() {
+    mouseIsDown = false;
+    var reducedPoints = [];
+    for (var i = 0; i < points.length; i+=10) {
+        reducedPoints.push(points[i]);
+    }
+    console.log(JSON.stringify(reducedPoints));
+}
+
+function mousemove(event) {
+    var point;
+    
+    if(event.offsetX) {
+        point = {x: event.offsetX, y: event.offsetY};
+    }
+    else if(event.layerX) {
+        point = {x: event.layerX-canvas.offsetLeft, 
+                 y: event.layerY-canvas.offsetTop};
+    }
+
+    if (point && mouseIsDown) {
+        points.push(point);
+    }
+}
+*/

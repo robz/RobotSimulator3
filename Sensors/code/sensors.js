@@ -1,3 +1,47 @@
+function linestrip(points) {
+    var lines = new Array(points.length-1);
+    
+    for (var i = 0; i < points.length-1; i++) {
+        lines[i] = create_line(points[i], points[i+1]);
+    }
+    
+    return {
+        points: points,
+        lines: lines
+    };
+}
+
+function line_sensor(linestrip, robot, offset_angle, offset_dist, length, numsensors) {
+    return {
+        linestrip: linestrip,
+        x: robot.x + offset_dist*Math.cos(offset_angle + robot.heading),
+        y: robot.y + offset_dist*Math.sin(offset_angle + robot.heading),
+        offset_dist: offset_dist,
+        offset_angle: offset_angle,
+        length: length,
+        num_sensors: num_sensors,
+        vals: new Array(numsensors),
+        
+        update : function(robot, delta_time) {
+            this.x = robot.x + this.offset_dist*Math.cos(this.offset_angle + robot.heading);
+            this.y = robot.y + this.offset_dist*Math.sin(this.offset_angle + robot.heading);
+            
+        },
+        
+        read : function() {
+        
+        },
+
+        getVal : function(x, y, lines) {
+            
+        },
+
+        draw : function(context, verbose) {
+        
+        }
+    }
+}
+
 function obstacle(polygon) {
     return {
         polygon : polygon,
@@ -33,9 +77,20 @@ function dist_sensor(obstacles, robot, offset_angle, offset_dist, offset_heading
         update : function(robot, delta_time) {
             this.x = robot.x + this.offset_dist*Math.cos(this.offset_angle + robot.heading);
             this.y = robot.y + this.offset_dist*Math.sin(this.offset_angle + robot.heading);
-            this.offset_heading += this.rotvel*delta_time;
+            this.offset_heading = (this.offset_heading + this.rotvel*delta_time)%(2*PI);
             this.heading = robot.heading + this.offset_heading; 
             this.val = this.getVal(this.x, this.y, this.heading, this.obstacles, this.MAX_VAL); 
+        },
+        
+        set_offset_angle: function(angle) {
+            this.offset_heading = angle%(2*PI);
+        },
+        
+        read : function() {
+            return {
+                distance: this.val,
+                offset_angle: this.offset_heading
+            };
         },
 
         getVal : function(x, y, dir, obstacles, max_dist) {
@@ -120,7 +175,7 @@ function light_sensor(sources, robot, offset_angle, offset_dist) {
                 this.val += this.sources[i].getValue(this.x, this.y);
             }
             
-            this.val /= .9;  
+            //this.val /= .9;  
         },
 
         getVal : function() {
