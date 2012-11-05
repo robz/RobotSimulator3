@@ -5,7 +5,7 @@ var PI = Math.PI,
 
 var robot, timekeeper, programField, pauseBtn, obstacles, progCodeMirror;
 
-var programFirstLoaded = false, pauseProgram = true;
+var programFirstLoaded = false, pauseProgram = true, programStatusText = "running manual";
 
 window.onload = function() 
 {    
@@ -13,7 +13,8 @@ window.onload = function()
     CANVAS_HEIGHT = canvas.height;
     CANVAS_WIDTH = canvas.width;
 
-    var heightstr = getComputedStyle(document.getElementById("loadBtn")).height;
+    pauseBtn = document.getElementById("pauseBtn");
+    var heightstr = getComputedStyle(pauseBtn).height;
     var btnheight = parseFloat(heightstr.substring(0, heightstr.length-2));
     
     programField = document.getElementById("programField");
@@ -28,8 +29,8 @@ window.onload = function()
         setInterval(program_iteration, 100);
     }
     sendRequest("code/default_program.js", setupProgramField);
-
-    pauseBtn = document.getElementById("pauseBtn");
+    
+    setStatusText("manual mode");
 }
 
 function program_iteration() {
@@ -67,18 +68,26 @@ function init_robot(obstacles) {
 
 function loadBtnClicked(event) 
 {
+    setStatusText("program loaded!");
     programFirstLoaded = true;
     add_code(progCodeMirror.getValue());
 }
 
 function pauseBtnClicked(event) 
 {
+    if (!programFirstLoaded) {
+        setStatusText("no program loaded! hit 'load' to load a program before running it.");
+        return;
+    }
+
     pauseProgram = !pauseProgram;
 
     if (pauseProgram) {
+        setStatusText("program stopped! (manual mode)");
         robot.set_wheel_velocities(0, 0);
         pauseBtn.innerText = "RUN";
-    } else if (!pauseProgram && programFirstLoaded) {
+    } else {
+        setStatusText("program running! (autonomous mode)");
         program_init(robot);
         pauseBtn.innerText = "STOP";
     }
@@ -112,6 +121,10 @@ function keydown(event)
     robot.update();
     robot.accelerate_wheels(delta_wheel1_velocity, delta_wheel2_velocity); 
 }
+
+function setStatusText(text) {
+    document.getElementById("status_text").innerHTML = text;
+}   
 
 function paintCanvas() 
 {
@@ -195,6 +208,8 @@ function create_obstacles() {
             {x:722.2222222222222-150,y:496.56250-150},
         ])),
     ];
+    
+    // Scale the obstacles to the size of the canvas
     
     var scalex = CANVAS_WIDTH/1000,
         scaley = CANVAS_HEIGHT/700;
