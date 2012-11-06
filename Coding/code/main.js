@@ -58,12 +58,15 @@ function init_robot(obstacles) {
 
     robot.obstacles = obstacles;
     robot.dist_sensor = dist_sensor(obstacles, robot, 0, robot.length/2, 0, 500, 0);
+    robot.line_sensor = line_sensor(linestrip(linesensor_points), robot, 0, robot.length, robot.width, 8);
     robot.sensors = [
-        robot.dist_sensor
+        robot.dist_sensor,
+        robot.line_sensor
     ];
 
     setInterval("timekeeper.update(10);", 10);
     setInterval(paintCanvas, 30);
+    
 }
 
 function loadBtnClicked(event) 
@@ -133,6 +136,15 @@ function paintCanvas()
         
     context.fillStyle = "lightGray";
     context.fillRect(0, 0, canvas.width, canvas.height);
+    
+    context.strokeStyle = "blue";
+    context.lineWidth = 3;
+    context.beginPath();
+    context.moveTo(linesensor_points[0].x, linesensor_points[0].y);
+    for (var i = 1; i < linesensor_points.length; i++) {
+        context.lineTo(linesensor_points[i].x, linesensor_points[i].y);
+    }
+    context.stroke();
         
     context.strokeStyle = "green";
     context.lineWidth = 1;
@@ -237,40 +249,3 @@ function create_obstacles() {
         
     return obstacles;
 }
-
-//
-// Functions for creating a line
-//
-
-var mouseIsDown = false;
-
-function mousedown() {
-    mouseIsDown = true;
-    points = [];
-}
-
-function mouseup() {
-    mouseIsDown = false;
-    var reducedPoints = [];
-    for (var i = 0; i < points.length; i+=10) {
-        reducedPoints.push(points[i]);
-    }
-    console.log(JSON.stringify(reducedPoints));
-}
-
-function mousemove(event) {
-    var point;
-    
-    if(event.offsetX) {
-        point = {x: event.offsetX, y: event.offsetY};
-    }
-    else if(event.layerX) {
-        point = {x: event.layerX-canvas.offsetLeft, 
-                 y: event.layerY-canvas.offsetTop};
-    }
-
-    if (point && mouseIsDown) {
-        points.push(point);
-    }
-}
-

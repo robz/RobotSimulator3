@@ -1,19 +1,26 @@
-var MAX_DIST = 500,
+var MAX_DIST = 7,
     MAX_SPEED = .1,
-    SETPOINT = 100;
+    SETPOINT = 3.5;
 
 // called when "run" is pressed
 function program_init(robot) 
 {
-    robot.dist_sensor.set_offset_angle(PI/5);
     robot.set_wheel_velocities(0, 0);
 }
 
 // called every 100 ms after "run" is pressed
 function program_loop(robot)
 {
-    var dist = robot.dist_sensor.read().distance,
-        error = dist - SETPOINT;
+    var line_sensor_vals = robot.line_sensor.read();
+    var sum = 0, total = 0;
+    for (var i = 0; i < line_sensor_vals.length; i++) {
+        if (line_sensor_vals[i]) {
+            sum += i;
+            total++;
+        }
+    }
+    
+    var error = SETPOINT - sum/total;
 
     var vel_left = MAX_SPEED,
         vel_right = MAX_SPEED;
@@ -21,15 +28,13 @@ function program_loop(robot)
     if (error > 0) 
     {
         var error_norm = 1 - error/(MAX_DIST - SETPOINT);
-        vel_right = MAX_SPEED*(2*error_norm - 1);
+        vel_left = MAX_SPEED*error_norm;
     } 
     else if (error < 0) 
     {
         var error_norm = 1 + error/SETPOINT;
-        vel_left = MAX_SPEED*(2*error_norm - 1);
+        vel_right = MAX_SPEED*error_norm;
     } 
 
     robot.set_wheel_velocities(vel_right, vel_left);
 }
-
-

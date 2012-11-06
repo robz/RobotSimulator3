@@ -31,7 +31,7 @@ function line_sensor(linestrip, robot, offset_angle, offset_dist, len, num_senso
         },
         
         read : function() {
-            return vals;
+            return this.vals;
         },
 
         setVals : function(x, y, lines) {
