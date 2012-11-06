@@ -101,16 +101,16 @@ function particle_filter(obstacles, dist_sensor, numParticles, startx, starty, r
 
     this.transition = function(list, obstacles) {
 	    for(var i = 0; i < list.length; i++) {
-		    var newParticle = null;
+		    var newParticle;
 		
-		    while(newParticle == null || !this.particleIsValid(newParticle, obstacles)) {
+		    do {
 		        var oldParticle = list[i];
 			    newParticle = create_particle(
 						        oldParticle.x + Math.random()*40-20,
 						        oldParticle.y + Math.random()*40-20,
 						        oldParticle.dir + Math.random()*Math.PI/3-Math.PI/6
 	                            );
-		    }
+		    } while (!this.particleIsValid(newParticle, obstacles));
 		
 		    list[i] = newParticle;
 	    }
@@ -121,10 +121,8 @@ function particle_filter(obstacles, dist_sensor, numParticles, startx, starty, r
     }
 
     this.particleIsValid = function(particle, obstacles) {
-	    if(!(particle.x > 0 
-	      && particle.x < CANVAS_WIDTH 
-	      && particle.y > 0 
-	      && particle.y < CANVAS_HEIGHT)) {
+	    if(!(particle.x > 0 && particle.x < CANVAS_WIDTH 
+	      && particle.y > 0 && particle.y < CANVAS_HEIGHT)) {
 		    return false;
         }
         return true;

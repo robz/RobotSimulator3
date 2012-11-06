@@ -85,11 +85,11 @@ function pauseBtnClicked(event)
     if (pauseProgram) {
         setStatusText("program stopped! (manual mode)");
         robot.set_wheel_velocities(0, 0);
-        pauseBtn.innerText = "RUN";
+        pauseBtn.innerHTML = "RUN";
     } else {
         setStatusText("program running! (autonomous mode)");
         program_init(robot);
-        pauseBtn.innerText = "STOP";
+        pauseBtn.innerHTML = "STOP";
     }
 }
 

@@ -41,7 +41,7 @@ window.onload = function()
     my_particle_filter = new particle_filter(
                                 obstacles,
                                 my_dist_sensor,
-                                300, 
+                                500, 
                                 CANVAS_WIDTH/3, 
                                 CANVAS_HEIGHT/3, 
                                 CANVAS_WIDTH/3, 
@@ -50,10 +50,10 @@ window.onload = function()
                                 );
     
     // process uncertainty covariance
-    Q = $M([[1e-4,0,0,0,0,0], 
+    Q = $M([[1e-6,0,0,0,0,0], 
             [0,1e-4,0,0,0,0], 
             [0,0,1e-4,0,0,0],
-            [0,0,0,1e-4,0,0], 
+            [0,0,0,1e-6,0,0], 
             [0,0,0,0,1e-4,0], 
             [0,0,0,0,0,1e-4]]);	
             
@@ -80,7 +80,6 @@ function runFilters() {
 function keydown(event) 
 {
     var key = event.which;
-    console.log(key);
     
     var delta_wheel1_velocity = 0, 
         delta_wheel2_velocity = 0;

@@ -66,7 +66,7 @@ function mouse(event) {
     
     for (var i = 0; i < rays.length; i++) { 
         rays[i] = createRay(startp.x, startp.y, 2*Math.PI*i/rays.length, 20); 
-        rays[i].m = getDistanceOld(rays[i]);
+        rays[i].m = getDistance(rays[i]);
     }
     
     drawRays(context, rays);
