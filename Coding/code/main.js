@@ -237,3 +237,40 @@ function create_obstacles() {
         
     return obstacles;
 }
+
+//
+// Functions for creating a line
+//
+
+var mouseIsDown = false;
+
+function mousedown() {
+    mouseIsDown = true;
+    points = [];
+}
+
+function mouseup() {
+    mouseIsDown = false;
+    var reducedPoints = [];
+    for (var i = 0; i < points.length; i+=10) {
+        reducedPoints.push(points[i]);
+    }
+    console.log(JSON.stringify(reducedPoints));
+}
+
+function mousemove(event) {
+    var point;
+    
+    if(event.offsetX) {
+        point = {x: event.offsetX, y: event.offsetY};
+    }
+    else if(event.layerX) {
+        point = {x: event.layerX-canvas.offsetLeft, 
+                 y: event.layerY-canvas.offsetTop};
+    }
+
+    if (point && mouseIsDown) {
+        points.push(point);
+    }
+}
+

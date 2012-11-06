@@ -39,6 +39,8 @@ window.onload = function()
             create_point(250, 650)]))
     ];
     
+    lineStrip = linestrip(points);
+    
     robot = tank_robot(
         CANVAS_WIDTH/2,
         CANVAS_HEIGHT/2,
@@ -67,7 +69,16 @@ window.onload = function()
             0,
             500,
             0
-        )];
+        ),
+        line_sensor(
+            lineStrip,
+            robot,
+            0,
+            robot.length,
+            robot.width,
+            8
+        )
+    ];
 
     setInterval("timekeeper.update(10);", 10);
     setInterval(paintCanvas, 30);

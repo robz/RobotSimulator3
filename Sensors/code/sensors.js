@@ -11,33 +11,63 @@ function linestrip(points) {
     };
 }
 
-function line_sensor(linestrip, robot, offset_angle, offset_dist, length, numsensors) {
+function line_sensor(linestrip, robot, offset_angle, offset_dist, len, num_sensors) {
     return {
+        SENSOR_RADIUS: 3,
+        
         linestrip: linestrip,
         x: robot.x + offset_dist*Math.cos(offset_angle + robot.heading),
         y: robot.y + offset_dist*Math.sin(offset_angle + robot.heading),
         offset_dist: offset_dist,
         offset_angle: offset_angle,
-        length: length,
+        len: len,
         num_sensors: num_sensors,
-        vals: new Array(numsensors),
+        vals: new Array(num_sensors),
         
         update : function(robot, delta_time) {
             this.x = robot.x + this.offset_dist*Math.cos(this.offset_angle + robot.heading);
             this.y = robot.y + this.offset_dist*Math.sin(this.offset_angle + robot.heading);
-            
+            this.setVals(this.x, this.y, this.linestrip.lines);
         },
         
         read : function() {
-        
+            return vals;
         },
 
-        getVal : function(x, y, lines) {
+        setVals : function(x, y, lines) {
+            for (var i = 0; i < this.num_sensors; i++) {
+                var d = i*(this.len/(this.num_sensors-1)) - this.len/2;
+                var cur_x = x + d*Math.cos(this.offset_angle+PI/2 + robot.heading),
+                    cur_y = y + d*Math.sin(this.offset_angle+PI/2 + robot.heading);
             
+                var circle = create_circle({x:cur_x,y:cur_y}, this.SENSOR_RADIUS);
+                this.vals[i] = false;
+                for (var j = 0; j < lines.length; j++) {
+                    if (dirLineSegCircleIntersection(lines[j], circle)) {
+                        this.vals[i] = true;
+                    }
+                }
+            }
         },
 
         draw : function(context, verbose) {
-        
+            for (var i = 0; i < this.vals.length; i++) {
+                var d = i*(this.len/(this.num_sensors-1)) - this.len/2;
+                var cur_x = this.x + d*Math.cos(this.offset_angle+PI/2 + robot.heading),
+                    cur_y = this.y + d*Math.sin(this.offset_angle+PI/2 + robot.heading);
+                    
+                if (this.vals[i]) {
+                    context.fillStyle = "tan";
+                    context.beginPath();
+                    context.arc(cur_x, cur_y, this.SENSOR_RADIUS, 0, 2*PI, true);
+                    context.fill();
+                } else {
+                    context.strokeStyle = "green";
+                    context.beginPath();
+                    context.arc(cur_x, cur_y, this.SENSOR_RADIUS, 0, 2*PI, true);
+                    context.stroke();
+                }
+            }
         }
     }
 }
