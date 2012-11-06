@@ -46,7 +46,6 @@ window.onload = function()
         progCodeMirrors[1].setValue(xmlhttp_request.responseText);
     });
     
-    
     setStatusText("currently in manual mode");
     setInterval(program_iteration, 100);
 }
@@ -97,7 +96,7 @@ function loadBtnClicked(event)
 function pauseBtnClicked(event) 
 {
     if (!programFirstLoaded) {
-        setStatusText("no program loaded! hit 'load' to load a program before running it.");
+        setStatusText("<div style=\"color: red;\">no program loaded! hit 'load' to load a program before running it.</div>");
         return;
     }
 

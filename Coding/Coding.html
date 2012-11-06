@@ -19,36 +19,23 @@
 <body>
 	<h2>Coding</h2>
 	<h3>Press the buttons to load/run/stop the program or click on the animation and use w/a/s/d/space to navigate manually.</h3>
-    <p id="status_text">hi!</p>
+    <p id="status_text">placeholder!</p>
 	<div id=container>
 	<canvas id="canvas" width=500 height=600 tabindex=1 onkeydown=keydown(event)></canvas>
 	<div id="leftpanel">
-	
-	    <!--
-                <div class="code_field">
-                    <textarea id="wall_following_program" class="programField">hi</textarea>
-                 </div>
-                 <div class="code_field">
-                    <textarea id="line_following_program" class="programField">hi</textarea>
-                </div>
-        
-        -->
-        
-		<div class="tabber">
+		<div class="tabber code_field">
 		    <div class="tablevel1 tabbertab" title="Wall Following">
-                <div class="code_field">
-                    <textarea id="wall_following_program" class="programField">hi</textarea>
-                 </div>
+                <textarea id="wall_following_program" class="programField">placeholder</textarea>
             </div>
 		    <div class="tablevel1 tabbertab" title="Line Following">
-                <div class="code_field">
-                    <textarea id="line_following_program" class="programField">hi</textarea>
-                </div>
+                <textarea id="line_following_program" class="programField">placeholder</textarea>
             </div>
         </div>
         <button id="loadBtn" class="btn" onclick=loadBtnClicked(event)>LOAD</button>
         <button id="pauseBtn" class="btn" onclick=pauseBtnClicked(event)>RUN</button>
     </div>   
     </div> 
+    <h4>For the curious:</h4>
+	<p>The robot in the animation panel has a few sensors on board: a distance sensor, and an array of 8 line sensors. The two programs shown use these sensors to do autonomous tasks. The wall-following program uses the distance sensor to crawl along whatever obstacles are to the robot's right side. The line-following program contains similar code to use its array of 8 line sensors (which turn tan when over a line) to move the robot forward over the blue line. Hitting the 'load' button will load onto the robot whatever program is currently visible on the tabbed panel.</p>
 </body>
 </html>
