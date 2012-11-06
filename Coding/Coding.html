@@ -1,7 +1,6 @@
 <html>
 <head>
 <link rel="stylesheet" type="text/css" href="style.css"/>	
-
 <script type="text/javascript" src="code/XMLRequest.js"></script>
 <script type="text/javascript" src="code/main.js"></script>
 <script type="text/javascript" src="code/linesensor_points.js"></script>
@@ -13,18 +12,43 @@
 <script type="text/javascript" src="../external/codemirror-2.35/codemirror.js"></script>
 <script type="text/javascript" src="../external/codemirror-2.35/javascript.js"></script>
 <link rel="stylesheet" type="text/css" href="../external/codemirror-2.35/codemirror.css">
+<script></script>
+<script type="text/javascript" src="../external/tabber/tabber.js"></script>
+<link rel="stylesheet" href="../external/tabber/example.css">
 </head>
 <body>
 	<h2>Coding</h2>
-	<h3>Press the buttons to load/run/stop the program<br/>or click on the animation and use w/a/s/d/space to navigate manually.</h3>
+	<h3>Press the buttons to load/run/stop the program or click on the animation and use w/a/s/d/space to navigate manually.</h3>
+    <p id="status_text">hi!</p>
 	<div id=container>
 	<canvas id="canvas" width=500 height=600 tabindex=1 onkeydown=keydown(event)></canvas>
 	<div id="leftpanel">
-        <div class="code_field"><textarea id="programField">hi</textarea></div>
+	
+	    <!--
+                <div class="code_field">
+                    <textarea id="wall_following_program" class="programField">hi</textarea>
+                 </div>
+                 <div class="code_field">
+                    <textarea id="line_following_program" class="programField">hi</textarea>
+                </div>
+        
+        -->
+        
+		<div class="tabber">
+		    <div class="tablevel1 tabbertab" title="Wall Following">
+                <div class="code_field">
+                    <textarea id="wall_following_program" class="programField">hi</textarea>
+                 </div>
+            </div>
+		    <div class="tablevel1 tabbertab" title="Line Following">
+                <div class="code_field">
+                    <textarea id="line_following_program" class="programField">hi</textarea>
+                </div>
+            </div>
+        </div>
         <button id="loadBtn" class="btn" onclick=loadBtnClicked(event)>LOAD</button>
         <button id="pauseBtn" class="btn" onclick=pauseBtnClicked(event)>RUN</button>
     </div>   
     </div> 
-    <p id="status_text">hi!</p>
 </body>
 </html>

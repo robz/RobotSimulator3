@@ -3,9 +3,16 @@ var PI = Math.PI,
     KEY_w = 87, KEY_s = 83, KEY_a = 65, KEY_d = 68, KEY_space = 32, KEY_e = 69,
     CANVAS_HEIGHT, CANVAS_WIDTH;
 
-var robot, timekeeper, programField, pauseBtn, obstacles, progCodeMirror;
+var robot, timekeeper, wall_following_field, line_following_field, pauseBtn, obstacles, progCodeMirrors, current_tab = 0;
 
 var programFirstLoaded = false, pauseProgram = true, programStatusText = "running manual";
+
+var tabberOptions = {
+    'onClick': function(args) {
+        current_tab = args.index;
+        setTimeout(progCodeMirrors[1].refresh, 0);
+    }
+};
 
 window.onload = function() 
 {    
@@ -17,20 +24,31 @@ window.onload = function()
     var heightstr = getComputedStyle(pauseBtn).height;
     var btnheight = parseFloat(heightstr.substring(0, heightstr.length-2));
     
-    programField = document.getElementById("programField");
-    progCodeMirror = CodeMirror.fromTextArea(programField);
-	progCodeMirror.getScrollerElement().style.height = CANVAS_HEIGHT - btnheight;
     
     obstacles = create_obstacles();
     init_robot(obstacles);
     
-    var setupProgramField = function(xmlhttp_request) {
-        progCodeMirror.setValue(xmlhttp_request.responseText);
-        setInterval(program_iteration, 100);
-    }
-    sendRequest("code/default_program.js", setupProgramField);
+    progCodeMirrors = new Array(2);
     
-    setStatusText("manual mode");
+    wall_following_field = document.getElementById("wall_following_program");
+    progCodeMirrors[0] = CodeMirror.fromTextArea(wall_following_field);
+	progCodeMirrors[0].getScrollerElement().style.height = CANVAS_HEIGHT - btnheight - 40;
+    
+    sendRequest("code/wall_following.js", function(xmlhttp_request) {
+        progCodeMirrors[0].setValue(xmlhttp_request.responseText);
+    });
+    
+    line_following_field = document.getElementById("line_following_program");
+    progCodeMirrors[1] = CodeMirror.fromTextArea(line_following_field);
+    progCodeMirrors[1].getScrollerElement().style.height = CANVAS_HEIGHT - btnheight - 40;
+    
+    sendRequest("code/line_following.js", function(xmlhttp_request) {
+        progCodeMirrors[1].setValue(xmlhttp_request.responseText);
+    });
+    
+    
+    setStatusText("currently in manual mode");
+    setInterval(program_iteration, 100);
 }
 
 function program_iteration() {
@@ -58,7 +76,7 @@ function init_robot(obstacles) {
 
     robot.obstacles = obstacles;
     robot.dist_sensor = dist_sensor(obstacles, robot, 0, robot.length/2, 0, 500, 0);
-    robot.line_sensor = line_sensor(linestrip(linesensor_points), robot, 0, robot.length, robot.width, 8);
+    robot.line_sensor = line_sensor(linestrip(linesensor_points), robot, 0, robot.length, robot.width*2/3, 8);
     robot.sensors = [
         robot.dist_sensor,
         robot.line_sensor
@@ -73,7 +91,7 @@ function loadBtnClicked(event)
 {
     setStatusText("program loaded!");
     programFirstLoaded = true;
-    add_code(progCodeMirror.getValue());
+    add_code(progCodeMirrors[current_tab].getValue());
 }
 
 function pauseBtnClicked(event) 
