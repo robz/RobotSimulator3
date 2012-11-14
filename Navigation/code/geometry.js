@@ -103,10 +103,14 @@ function lineIntersection (l1, l2) {
 }
 
 function create_line_from_vector(point, theta, mag) {
+    theta = Math.round(100000*theta)/100000;
+    
     var farpoint = create_point(
         point.x+mag*Math.cos(theta), 
         point.y+mag*Math.sin(theta));
-        
+    
+    theta = (theta%(2*Math.PI)+2*Math.PI)%(2*Math.PI);
+    
     var ongrid = (theta/Math.PI*2)%2;
     if (ongrid == Math.round(ongrid)) {
         if (ongrid == 0 || ongrid == 2) {

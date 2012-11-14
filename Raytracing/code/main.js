@@ -1,279 +1,371 @@
-var XCELLS = 20, YCELLS = 20; 
-var CANVAS_WIDTH, CANVAS_HEIGHT, CELL_WIDTH, CELL_HEIGHT;
-var bounding_grid;
+var init_point = create_point(250, 250),
+    world = null,
+    context = null;
 
-var WALL_DIFFS = [
-    [-1, 0],
-    [0, -1],
-    [1, 0],
-    [0, 1]
-];
-
-var startp, obstacles;
- 
-window.onload=function() {  
-    var canvas = document.getElementById("canvas");
-    var context = canvas.getContext("2d");
-    
-    CANVAS_WIDTH = canvas.width;
-    CANVAS_HEIGHT = canvas.height;
-    CELL_WIDTH = CANVAS_WIDTH/XCELLS;
-    CELL_HEIGHT = CANVAS_HEIGHT/YCELLS;
-
-    bounding_grid = createBoundingGrid(XCELLS, YCELLS, CELL_WIDTH, CELL_HEIGHT);
+window.onload = function() {
+  var ROWS = 15, COLS = 15;
   
-    obstacles = [];
-    var r = 100, d = 100;
-    context.strokeStyle = "black";
-    for (var i = 0; i < 100; i++) {
-        var seedx = Math.random()*(CANVAS_WIDTH-2*d)+d,
-            seedy = Math.random()*(CANVAS_HEIGHT-2*d)+d,
-            a1 = Math.random()*Math.PI*2/3,
-            a2 = Math.random()*Math.PI*2/3,
-            a3 = Math.random()*Math.PI*2/3;
-        obstacles.push(obstacle(create_polygon([
-            create_point(seedx + r*Math.cos(a1), seedy + r*Math.sin(a1)),
-            create_point(seedx + r*Math.cos(a1+a2), seedy + r*Math.sin(a1+a2)),
-            create_point(seedx + r*Math.cos(a1+a2+a3), seedy + r*Math.sin(a1+a2+a3)),
-        ])));
-        obstacles[i].draw(context);
-    }
-
-    context.strokeStyle = "lightGray";
+  var canvas = document.getElementById("canvas");
+  context = canvas.getContext("2d");
+  
+  polys = [];
+  
+  var r = 30, d = 100;
+  for (var i = 0; i < 100; i++) {
+    var seedx = Math.random()*(canvas.width-2*d)+d,
+        seedy = Math.random()*(canvas.height-2*d)+d,
+        a1 = Math.random()*Math.PI*2/3,
+        a2 = Math.random()*Math.PI*2/3,
+        a3 = Math.random()*Math.PI*2/3;
+    polys.push(create_polygon([
+      {x: seedx + r*Math.cos(a1), y: seedy + r*Math.sin(a1)},
+      {x: seedx + r*Math.cos(a1+a2), y: seedy + r*Math.sin(a1+a2)},
+      {x: seedx + r*Math.cos(a1+a2+a3), y: seedy + r*Math.sin(a1+a2+a3)},
+    ]));
+  }
+  
+  world = create_world(COLS, ROWS, canvas.width/COLS, canvas.height/ROWS, polys);
+  world.draw(context);  
+  
+  var point = {x:canvas.width/2, y:canvas.height/2};
+  context.strokeStyle = "gray";
+  for (var theta = 0; theta < 360; theta+=1000/360) {
+    var point2 = trace(world, point, theta*Math.PI/180, context);
     
-    fillGrid(bounding_grid.grid, obstacles);
-    bounding_grid.draw(context);
-}
-
-function mouse(event) {
-    if (document.readyState !== "complete") {
-        return;
-    }
-
-    startp = {x: event.offsetX, y: event.offsetY};
-
-    if(event.offsetX) {
-        startp = {x: event.offsetX, y: event.offsetY};
-    }
-    else if(event.layerX) {
-        startp = {x: event.layerX-canvas.offsetLeft, 
-                  y: event.layerY-canvas.offsetTop};
-    }
-    
-    var context = document.getElementById("canvas").getContext("2d");
-    
-    var rays = new Array(360);
-    
-    for (var i = 0; i < rays.length; i++) { 
-        rays[i] = createRay(startp.x, startp.y, 2*Math.PI*i/rays.length, 20); 
-        rays[i].m = getDistance(rays[i]);
-    }
-    
-    drawRays(context, rays);
-}
-
-function drawRays(context, rays) {
-    context.fillStyle = "white";
-    context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    
-    context.strokeStyle = "darkGray";
-    for (var i = 0; i < rays.length; i++) {
-        var ray = rays[i];
-        context.beginPath();
-        context.moveTo(startp.x, startp.y);
-        context.lineTo(startp.x + rays[i].m*Math.cos(rays[i].dir),
-                       startp.y + rays[i].m*Math.sin(rays[i].dir));
-        context.stroke();
-    }
-    
-    context.strokeStyle = "black";
-    for (var i = 0; i < obstacles.length; i++) {
-        obstacles[i].draw(context);
-    }
-    
-    context.fillStyle = "black";
-    context.strokeStyle = "lightGray";
-    bounding_grid.draw(context);
-}
-
-function getDistanceOld(ray) {
-    var mindist = 1000;
-    for (var i = 0; i < obstacles.length; i++) {
-        var poly = obstacles[i].polygon;
-        for (var j = 0; j < poly.lines.length; j++) {
-            var p = lineSegmentIntersection(ray.line, poly.lines[j]);
-            if (p) {
-                var newdist = euclidDist(p, ray);
-                if (newdist < mindist) {
-                    mindist = newdist;
-                }
-            }
-        }
-    }
-    return mindist;
-}
-
-function getDistance(ray) {
-    var cell = bounding_grid.getCell(ray);
-    var maxdist = 1000, pdist = {val:0}, pstarted = {val:false}, totaldist = 0, dist = maxdist;   
- 
-    while (cell != null) { 
-        totaldist += pdist.val;
-        for (var i = 0; i < cell.obstacles.length; i++) {
-            var poly = cell.obstacles[i].polygon;
-            for (var j = 0; j < poly.lines.length; j++) {
-                var p = lineSegmentIntersection(ray.line, poly.lines[j])
-                if (p) {
-                    var newdist = euclidDist(p, startp) 
-                    if (newdist < dist) {
-                        dist = newdist;
-                    }
-                }
-            }
-        }
-        cell = traceToNextBoundary(ray, cell, maxdist-totaldist, pdist, pstarted);
-    } 
-    
-    return dist;
-}
-
-function fillGrid(grid, obstacles) {
-    for (var x = 0; x < grid.length; x++) {
-        for (var y = 0; y < grid[x].length; y++) {
-            var box = grid[x][y].box;
-            for (var i = 0; i < obstacles.length; i++) {
-                if (polyIntersectsPoly(box, obstacles[i].polygon)) {
-                    grid[x][y].obstacles.push(obstacles[i]);
-                } 
-            }
-        }
-    }
-}
-
-function traceToNextBoundary(ray, cell, mindist, pdist, pstarted) {
-    var intersection = null,
-        intersectionIndex = -1;
-    
-    for (var i = 0; i < cell.lines.length; i++) {
-        var p = lineSegmentIntersection(cell.lines[i], ray.line);
-        if (p) {
-            var dist = euclidDist(p, ray);
-            if (dist > 0.001 && dist < mindist) {
-                mindist = dist;
-                intersection = p;
-                intersectionIndex = i;
-            } else if (dist <= 0.001 && !pstarted.val) {
-                mindist = dist;
-                intersection = p;
-                intersectionIndex = i;
-            }
-        } 
-    }
-   
-    pstarted.val = true;
-   
-    if (intersection) {
-        ray.reinit(intersection);
-        var cell = bounding_grid.getNextCell(cell, intersectionIndex);
- 
-        if (cell) {
-            pdist.val = mindist;
-            return cell;
-        } else {
-            return null;
-        }
+    if (!point2) {
+      console.log(theta);
     } else {
-        return undefined;
+      draw_line(context, point, point2);
     }
+  }
 }
 
-function createRay(x, y, dir, m) {
-    return {
-        x: x,
-        y: y,
-        dir: dir,
-        m: m,
-        line: create_line_from_vector({x:x,y:y}, dir, CANVAS_WIDTH*CANVAS_HEIGHT),
-        
-        reinit: function(p) {
-            this.x = p.x;
-            this.y = p.y;
-            this.line = create_line_from_vector(p, dir, CANVAS_WIDTH*CANVAS_HEIGHT);
-        },
-
-        draw: function(context) {
-            var tipx = this.x + this.m*Math.cos(this.dir),
-                tipy = this.y + this.m*Math.sin(this.dir);
-            context.beginPath();
-            context.moveTo(this.x, this.y);
-            context.lineTo(tipx, tipy);
-            context.lineTo(tipx + (m/4)*Math.cos(this.dir+Math.PI*3/4), 
-                           tipy + (m/4)*Math.sin(this.dir+Math.PI*3/4));
-            context.lineTo(tipx, tipy);
-            context.lineTo(tipx + (m/4)*Math.cos(this.dir-Math.PI*3/4), 
-                           tipy + (m/4)*Math.sin(this.dir-Math.PI*3/4));
-            context.stroke();
-        }
-    };
+function mousemove(event) {
+  var mouse = null;
+  
+  if (event.offsetX) {
+    mouse = {x: event.offsetX, y: event.offsetY};
+  } else if (event.layerX) {
+    mouse = {x: event.layerX - canvas.offsetLeft,
+             y: event.layerY - canvas.offsetTop};
+  } else {
+    return;
+  }
+  
+  context.fillStyle = "white";
+  context.fillRect(0, 0, world.cols*world.cell_width, world.rows*world.cell_height);
+  
+  context.strokeStyle = "gray";
+  for (var theta = 0; theta < 360; theta+=.3) {
+    var point = trace(world, mouse, theta*Math.PI/180, context);
+    draw_line(context, mouse, point);
+  }
+  
+  world.draw(context);
 }
 
-function createBoundingGrid(xcells, ycells, sizex, sizey) {
-    var xlines = new Array(xcells+1),
-        ylines = new Array(ycells+1);
-
-    for (var x = 0; x <= xcells; x++) {
-        xlines[x] = create_line({x:x*sizex, y:0}, {x:x*sizex, y:ycells*sizey}); 
-    }
-
-    for (var y = 0; y <= ycells; y++) {
-        ylines[y] = create_line({x:0, y:y*sizey}, {x:xcells*sizex, y:y*sizey});
-    }
-
-    var grid = new Array(xcells);
-    for (var x = 0; x < xcells; x++) {
-        grid[x] = new Array(ycells);
-        for (var y = 0; y < ycells; y++) {
-            grid[x][y] = {
-                x: x, 
-                y: y, 
-                lines: [xlines[x], ylines[y], xlines[x+1], ylines[y+1]],
-                box: create_boxpoly(x*sizex, y*sizey, sizex, sizey),
-                obstacles: [] 
-            };
-        }
-    }
+function trace(world, start_point, heading) {
+  var row = Math.round(start_point.y/world.cell_height-.5),
+      col = Math.round(start_point.x/world.cell_width-.5),
+      box = world.boxes[row][col],
+      prev_box = null,
+      intersection = create_point(start_point.x, start_point.y);
+      
+  var count = world.rows + world.cols + 1;
+  
+  var closest_dist = 1000,
+      closest_intersection = null;
+  
+  while (box && count > 0) {
+    var ray = create_ray(intersection, heading);
     
-    return {
-        grid: grid,
-
-        getCell: function(point) {
-            var borderx = Math.round((point.x - sizex/2)/sizex),
-                bordery = Math.round((point.y - sizey/2)/sizey);
-            return this.grid[borderx][bordery];
-        },
-
-        getNextCell: function(cell, wallIndex) {
-            var diffs = WALL_DIFFS[wallIndex];
-            var newx = cell.x + diffs[0],
-                newy = cell.y + diffs[1];    
-            if (newx < 0 || newx >= xcells || newy < 0 || newy >= ycells) {
-                return null;
-            }
-            return this.grid[newx][newy];
-        },
-
-        draw: function(context) {
-            for (var x = 0; x < this.grid.length; x++) {
-                for (var y = 0; y < this.grid[x].length; y++) {
-                    if (this.grid[x][y].obstacles.length == 0) {
-                        context.strokeRect(x*sizex, y*sizey, sizex, sizey);
-                    } else {
-                        // context.fillRect(x*sizex, y*sizey, sizex, sizey);
-                    }
-                    context.fillText(this.grid[x][y].obstacles.length, x*sizex+sizex/2, y*sizey+sizey/2);
-                }
-            }
+    for (var i = 0; i < box.edges.length; i++) {
+      var p = intersects(ray, box.edges[i]);
+      if (p) {
+        var dist = euclidDist(p, start_point);
+        if (dist < closest_dist) {
+          closest_intersection = p;
+          closest_dist = dist;
         }
-    };
+      }
+    }
+  
+    new_box = getNextBox(world, ray, box, prev_box, intersection);
+    prev_box = box;
+    box = new_box;
+    
+    count--;
+  }
+  
+  if (count == 0) {
+    console.log("yo we got an error up in this joint.");
+    return;
+  }
+  
+  if (!closest_intersection) {
+    closest_intersection = intersection;
+  }
+  
+  return closest_intersection;
 }
+
+//
+// returns false if no next-box is found
+//         null if the next-box is outside of the world
+//         next-box otherwise--sets intersection
+//
+function getNextBox(world, ray, box, prev_box, intersection) {
+  var next_box = false;
+  var theta = (ray.theta%(2*Math.PI)+2*Math.PI)%(2*Math.PI);
+  
+  indexes = [0, 2, 1, 3];
+  
+  if (theta >= 0 && theta <= Math.PI/2) {
+    indexes = [3, 1, 0, 2];
+  } else if (theta > Math.PI/2 && theta <= Math.PI) {
+    indexes = [0, 3, 1, 2];
+  } else if (theta > Math.PI && theta <= 3*Math.PI/2) {
+    indexes = [2, 0, 1, 3];
+  } else if (theta > 3*Math.PI/2 && theta <= 2*Math.PI) {
+    indexes = [2, 1, 0, 3];
+  } 
+  
+  for (var i = 0; i < box.segments.length; i++) {
+    var index = indexes[i];
+    var p = intersects(ray, box.segments[index]);
+    
+    if (p) {
+      intersection.x = p.x;
+      intersection.y = p.y;
+      
+      next_box = box.adj_boxes[index];
+      
+      if (next_box != prev_box) {
+        break;
+      } else {
+        next_box = false;
+      }
+    }
+  }
+  
+  return next_box;
+}
+
+function intersects(ray, segment) {
+  return lineSegmentIntersection(ray, segment);
+}
+
+function create_world(cols, rows, cell_width, cell_height, polys) {
+  var points = new Array((rows+1)*(cols+1)),
+      col_segs = new Array(rows),
+      row_segs = new Array(cols),
+      boxes = new Array(rows*cols);
+  
+  for (var r = 0; r < rows+1; r++) {
+    points[r] = new Array(cols+1);
+    for (var c = 0; c < cols+1; c++) {
+      points[r][c] = create_point(c*cell_width, r*cell_height);
+    }
+  }
+  
+  for (var r = 0; r < rows; r++) {
+    col_segs[r] = new Array(cols+1);
+    for (var c = 0; c < cols+1; c++) {
+      col_segs[r][c] = create_segment(points[r][c], points[r+1][c]);
+    }
+  }
+  
+  for (var c = 0; c < cols; c++) {
+    row_segs[c] = new Array(rows+1);
+    for (var r = 0; r < rows+1; r++) {
+      row_segs[c][r] = create_segment(points[r][c], points[r][c+1]);
+    }
+  }
+  
+  for (var r = 0; r < rows; r++) {
+    boxes[r] = new Array(cols);
+    for (var c = 0; c < cols; c++) {
+      var x = c*cell_width, 
+          y = r*cell_height;
+      boxes[r][c] = create_box(null, null, r, c, x, y, cell_width, cell_height);
+    }
+  }
+  
+  var dir_difs = [[0,-1],[0,1],[-1,0],[1,0]];
+  
+  for (var r = 0; r < rows; r++) {
+    for (var c = 0; c < cols; c++) {
+      var segs = [col_segs[r][c], col_segs[r][c+1], row_segs[c][r], row_segs[c][r+1]],
+          adj_boxes = new Array(dir_difs.length),
+          edges = [];
+      
+      for (var i = 0; i < dir_difs.length; i++) {
+        var dir_dif = dir_difs[i],
+            new_r = r + dir_dif[0],
+            new_c = c + dir_dif[1];
+            
+        if (out_of_bounds(new_r, new_c, rows, cols)) {
+          adj_boxes[i] = null;
+        } else {
+          adj_boxes[i] = boxes[new_r][new_c];
+        }
+      }
+      
+      for (var i = 0; i < polys.length; i++) {
+        for (var j = 0; j < polys[i].lines.length; j++) {
+          for (var k = 0; k < segs.length; k++) {
+            if (lineSegmentIntersection(polys[i].lines[j], segs[k])
+              || boxes[r][c].containsPoint(polys[i].lines[j].p1)) {          
+              edges.push(polys[i].lines[j]);
+              break;
+            }
+          }
+        }
+      }
+      
+      boxes[r][c].segments = segs;
+      boxes[r][c].adj_boxes = adj_boxes;
+      boxes[r][c].edges = edges;
+    }
+  }
+  
+  return {
+    points: points,
+    row_segs: row_segs,
+    col_segs: col_segs,
+    boxes: boxes,
+    cell_width: cell_width,
+    cell_height: cell_height,
+    rows: rows,
+    cols: cols,
+    polys: polys,
+    
+    draw: function(context) {
+      context.strokeStyle = "black";
+      
+      for (var r = 0; r < rows+1; r++) {
+        draw_line(context, points[r][0], points[r][cols]);
+      }
+      
+      for (var c = 0; c < cols+1; c++) {
+        draw_line(context, points[0][c], points[rows][c]);
+      }
+      
+      for (var i = 0; i < polys.length; i++) {
+        draw_poly(context, polys[i]);
+      }
+      
+      for (var r = 0; r < rows; r++) {
+        for (var c = 0; c < cols; c++) {
+          context.fillText(""+boxes[r][c].edges.length, c*cell_width+cell_width/2, r*cell_height+cell_height/2);
+        }
+      }
+    }
+  }
+}
+
+function create_point(x, y) {
+  return {x:x, y:y};
+}
+
+function create_ray(point, heading) {
+  return create_line_from_vector(point, heading, 1000);
+}
+
+function create_segment(point1, point2) {
+  return create_line(point1, point2);
+}
+
+function create_box(segments, adj_boxes, row, col, x, y, width, height) {
+  return {
+    segments: segments,
+    adj_boxes: adj_boxes,
+    x: x, 
+    y: y,
+    width: width,
+    height: height,
+    row: row, 
+    col: col,
+    poly: create_boxpoly(x, y, width, height),
+    
+    containsPoint: function(p) {
+      return p.x >= x && p.x <= x+width && p.y >= y && p.y <= y+height;
+    },
+    
+    draw: function(context) {
+      context.fillStyle = "brown";
+      
+      context.fillRect(this.x, this.y, this.width, this.height);
+    }
+  };
+}
+
+function draw_poly(context, poly) {
+  context.beginPath();
+  context.moveTo(poly.points[0].x, poly.points[0].y);
+  for (var i = 1; i < poly.points.length; i++) {
+    context.lineTo(poly.points[i].x, poly.points[i].y);
+  }
+  context.lineTo(poly.points[0].x, 
+                 poly.points[0].y);
+  context.stroke();
+}
+
+function draw_line(context, p1, p2) {
+  context.beginPath();
+  context.moveTo(p1.x, p1.y);
+  context.lineTo(p2.x, p2.y);
+  context.stroke();
+}
+
+function out_of_bounds(r, c, rows, cols) {
+  return r >= rows || c >= cols || r < 0 || c < 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

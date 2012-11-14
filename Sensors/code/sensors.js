@@ -1,3 +1,18 @@
+function encoders(robot) {
+    return {
+        vals: [0, 0],    
+  
+        update: function(robot, delta_time) {
+            vals[0] += robot.wheel1_velocity*delta_time;
+            vals[1] += robot.wheel2_velocity*delta_time;
+        },
+        
+        read: function() {
+            return this.vals;
+        }
+    }
+}
+
 function linestrip(points) {
     var lines = new Array(points.length-1);
     
