@@ -1,3 +1,5 @@
+var PI = Math.PI, cos = Math.cos, sin = Math.sin, abs = Math.abs;
+
 var ACKERMAN = 0, TANK = 1, CRAB = 2;
 var MAX_ALPHA_ACKERMAN = PI/3, MAX_ALPHA_CRAB = 3*PI/4, 
     SCALE = 1, WHEEL_WIDTH = 4*SCALE, WHEEL_LENGTH = 15*SCALE;
@@ -12,7 +14,6 @@ var wheels = [[{x:0,y:0}, {x:0,y:0}, {x:0,y:0}, {x:0,y:0}],
               [{x:0,y:0}, {x:0,y:0}, {x:0,y:0}, {x:0,y:0}]],
     corners = [{x:0,y:0}, {x:0,y:0}, {x:0,y:0}, {x:0,y:0}];
     
-var cos = Math.cos, sin = Math.sin, abs = Math.abs;
 
 function crab_robot(x, y, heading, steering_angle, velocity, length, width,
             last_time_updated, time_keeper) 

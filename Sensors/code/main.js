@@ -1,7 +1,9 @@
 var PI = Math.PI, MAX_V = .1, DELTA_ALPHA = PI/20, DELTA_V = .005, CANVAS_WIDTH, CANVAS_HEIGHT, 
     KEY_w = 87, KEY_s = 83, KEY_a = 65, KEY_d = 68, KEY_space = 32, KEY_e = 69;
 
-var robot, timekeeper, lightSource, obstacle;
+var ROWS = 20, COLS = 20;
+
+var robot, timekeeper, lightSource, obstacle, raytracer;
 
 window.onload = function() 
 {
@@ -20,26 +22,26 @@ window.onload = function()
         Math.random()*(CANVAS_HEIGHT-100)+50,
         100
     );
-
-    obstacles = [
-        obstacle(create_polygon([
-            create_point(20,20), 
-            create_point(150,250),
-            create_point(200,150)])),
-        obstacle(create_polygon([
-            create_point(600, 50),
-            create_point(620, 200),
-            create_point(700, 210),
-            create_point(690, 43)])),
-        obstacle(create_polygon([
-            create_point(300, 500),
-            create_point(500, 450),
-            create_point(800, 500),
-            create_point(800, 670),
-            create_point(250, 650)]))
-    ];
     
-    lineStrip = linestrip(points);
+    obstacles = [];
+  
+    var r = 30, d = 100;
+    for (var i = 0; i < 100; i++) {
+      var seedx = Math.random()*(canvas.width-2*d)+d,
+          seedy = Math.random()*(canvas.height-2*d)+d,
+          a1 = Math.random()*Math.PI*2/3,
+          a2 = Math.random()*Math.PI*2/3,
+          a3 = Math.random()*Math.PI*2/3;
+      obstacles.push(obstacle(create_polygon([
+        create_point(seedx + r*Math.cos(a1), seedy + r*Math.sin(a1)),
+        create_point(seedx + r*Math.cos(a1+a2), seedy + r*Math.sin(a1+a2)),
+        create_point(seedx + r*Math.cos(a1+a2+a3), seedy + r*Math.sin(a1+a2+a3)),
+      ])));
+    }
+    
+    raytracer = create_raytracer(COLS, ROWS, CANVAS_WIDTH/COLS, CANVAS_HEIGHT/ROWS, obstacles);
+    
+    lineStrip = line_strip(points);
     
     robot = tank_robot(
         CANVAS_WIDTH/2,
@@ -49,6 +51,18 @@ window.onload = function()
     );
         
     robot.sensors = [
+        lidar_sensor(
+            raytracer,
+            robot,
+            0,
+            robot.length/2,
+            0,
+            500,
+            0,
+            -PI,
+            PI,
+            100
+        ),
         light_sensor(
             [lightSource],
             robot, 
@@ -61,15 +75,6 @@ window.onload = function()
             my_atan(robot.width/2, robot.length),
             Math.sqrt(robot.width*robot.width/4 + robot.length*robot.length)
         ),
-        dist_sensor(
-            obstacles,
-            robot,
-            0,
-            robot.length/2,
-            0,
-            500,
-            0
-        ),
         line_sensor(
             lineStrip,
             robot,
@@ -77,11 +82,11 @@ window.onload = function()
             robot.length,
             robot.width,
             8
-        )
+        ),
     ];
 
-    setInterval("timekeeper.update(10);", 10);
-    setInterval(paintCanvas, 30);
+    setInterval("timekeeper.update(50);", 50);
+    setInterval(paintCanvas, 40);
 }
 
 function keydown(event) 
@@ -144,10 +149,11 @@ function paintCanvas()
     robot.update();
     context.strokeStyle = "green";
     robot.draw(context);
-     
-    context.fillStyle = "black";
-    context.strokeStyle = "black";
-    for (var i = 0; i < robot.sensors.length; i++) {
+    
+    context.lineWidth = 1;
+    for (var i = 0; i < robot.sensors.length; i++) { 
+        context.strokeStyle = "black";
+        context.fillStyle = "black";
         robot.sensors[i].draw(context);
     }
 }

@@ -1,3 +1,46 @@
+function Sensor(robot) {
+    var true_value = null,
+        returned_value = null;
+        
+    this.update = function() {
+    
+    };
+        
+    this.read = function() {
+        return returned_value;
+    };
+}
+
+function GPS(robot) {
+    var true_value = {x:null, y:null},
+        returned_value = {x:null, y:null};
+        
+    this.update = function() {
+        true_value.x = robot.x;
+        true_value.y = robot.y;
+        returned_value.x = true_value.x + Math.random()*2 - 1;
+        returned_value.y = true_value.y + Math.random()*2 - 1;
+    };
+        
+    this.read = function() {
+        return returned_value;
+    };
+}
+
+function Compass(robot) {
+    return {
+        val: null,
+        
+        update: function(robot) {
+            val = robot.heading;
+        },
+        
+        read: function() {
+            return val;
+        }
+    }
+}
+
 function encoders(robot) {
     return {
         vals: [0, 0],    
@@ -13,7 +56,7 @@ function encoders(robot) {
     }
 }
 
-function linestrip(points) {
+function line_strip(points) {
     var lines = new Array(points.length-1);
     
     for (var i = 0; i < points.length-1; i++) {
@@ -39,17 +82,17 @@ function line_sensor(linestrip, robot, offset_angle, offset_dist, len, num_senso
         num_sensors: num_sensors,
         vals: new Array(num_sensors),
         
-        update : function(robot, delta_time) {
+        update: function(robot, delta_time) {
             this.x = robot.x + this.offset_dist*Math.cos(this.offset_angle + robot.heading);
             this.y = robot.y + this.offset_dist*Math.sin(this.offset_angle + robot.heading);
             this.setVals(this.x, this.y, this.linestrip.lines);
         },
         
-        read : function() {
+        read: function() {
             return this.vals;
         },
 
-        setVals : function(x, y, lines) {
+        setVals: function(x, y, lines) {
             for (var i = 0; i < this.num_sensors; i++) {
                 var d = i*(this.len/(this.num_sensors-1)) - this.len/2;
                 var cur_x = x + d*Math.cos(this.offset_angle+PI/2 + robot.heading),
@@ -65,7 +108,7 @@ function line_sensor(linestrip, robot, offset_angle, offset_dist, len, num_senso
             }
         },
 
-        draw : function(context, verbose) {
+        draw: function(context, verbose) {
             for (var i = 0; i < this.vals.length; i++) {
                 var d = i*(this.len/(this.num_sensors-1)) - this.len/2;
                 var cur_x = this.x + d*Math.cos(this.offset_angle+PI/2 + robot.heading),
@@ -89,24 +132,140 @@ function line_sensor(linestrip, robot, offset_angle, offset_dist, len, num_senso
 
 function obstacle(polygon) {
     return {
-        polygon : polygon,
+        polygon: polygon,
         
-        draw : function(context) {
-	          var points = this.polygon.points;
-	          
-	          context.beginPath();
-	          context.moveTo(points[0].x, points[0].y);
-	          for (i = 1; i < points.length; i++) {
-		          context.lineTo(points[i].x, points[i].y);
-	          }
-	          context.closePath();
-	          
-	          context.stroke();
+        draw: function(context) {
+              var points = this.polygon.points;
+              
+              context.beginPath();
+              context.moveTo(points[0].x, points[0].y);
+              for (i = 1; i < points.length; i++) {
+                  context.lineTo(points[i].x, points[i].y);
+              }
+              context.closePath();
+              
+              context.stroke();
         }
     }
 }
 
-function dist_sensor(obstacles, robot, offset_angle, offset_dist, offset_heading, MAX_VAL, rotvel) {
+function lidar_sensor(raytracer, robot, offset_angle, offset_dist, offset_heading, MAX_VAL, rotvel, start_angle, end_angle, num_angles) {
+    return {
+        raytracer: raytracer,
+        x: robot.x + offset_dist*Math.cos(offset_angle + robot.heading),
+        y: robot.y + offset_dist*Math.sin(offset_angle + robot.heading),
+        heading: robot.heading + offset_heading,
+        offset_angle: offset_angle,
+        offset_dist: offset_dist,
+        offset_heading: offset_heading,
+        MAX_VAL: MAX_VAL,
+        rotvel: rotvel,
+        start_angle: start_angle, 
+        end_angle: end_angle, 
+        num_angles: num_angles,
+        val: new Array(num_angles),
+        inc: (end_angle-start_angle)/(num_angles),
+
+        update : function(robot, delta_time) {
+            this.x = robot.x + this.offset_dist*Math.cos(this.offset_angle + robot.heading);
+            this.y = robot.y + this.offset_dist*Math.sin(this.offset_angle + robot.heading);
+            this.offset_heading = (this.offset_heading + this.rotvel*delta_time)%(2*PI);
+            this.heading = robot.heading + this.offset_heading; 
+            this.setVals(this.x, this.y, this.heading, this.MAX_VAL); 
+        },
+        
+        set_offset_angle: function(angle) {
+            this.offset_heading = angle%(2*PI);
+        },
+        
+        read: function() {
+            return {
+                distance: this.val,
+                offset_angle: this.offset_heading
+            };
+        },
+        
+        setVals: function(x, y, dir, max_val) {
+            for (var i = 0; i < this.num_angles; i++) {
+                this.val[i] = this.getVal(x, y, dir+this.start_angle+this.inc*i, max_val);
+            }
+        },
+
+        getVal: function(x, y, dir, max_val) {
+            var point = create_point(x, y);
+            var res = this.raytracer.trace(point, dir, max_val);
+            return euclidDist(point, res);
+        },
+
+        draw: function(context, verbose) {
+            context.strokeStyle = "rgba(100, 100, 100, 0.2)";
+            for (var i = 0; i < this.num_angles; i++) {
+              var angle = this.start_angle+this.inc*i;
+              var dist = this.val[i];
+              context.beginPath();
+              context.moveTo(this.x, this.y);
+              context.lineTo(this.x + dist*Math.cos(this.heading+angle), 
+                             this.y + dist*Math.sin(this.heading+angle));
+              context.stroke();   
+            }
+        }
+    }
+} 
+
+function distance_sensor(raytracer, robot, offset_angle, offset_dist, offset_heading, MAX_VAL, rotvel) {
+    return {
+        raytracer: raytracer,
+        x: robot.x + offset_dist*Math.cos(offset_angle + robot.heading),
+        y: robot.y + offset_dist*Math.sin(offset_angle + robot.heading),
+        heading: robot.heading + offset_heading,
+        offset_angle: offset_angle,
+        offset_dist: offset_dist,
+        offset_heading: offset_heading,
+        MAX_VAL: MAX_VAL,
+        rotvel: rotvel,
+        val: null,
+
+        update: function(robot, delta_time) {
+            this.x = robot.x + this.offset_dist*Math.cos(this.offset_angle + robot.heading);
+            this.y = robot.y + this.offset_dist*Math.sin(this.offset_angle + robot.heading);
+            this.offset_heading = (this.offset_heading + this.rotvel*delta_time)%(2*PI);
+            this.heading = robot.heading + this.offset_heading; 
+            this.val = this.getVal(this.x, this.y, this.heading, this.MAX_VAL); 
+        },
+        
+        set_offset_angle: function(angle) {
+            this.offset_heading = angle%(2*PI);
+        },
+        
+        read: function() {
+            return {
+                distance: this.val,
+                offset_angle: this.offset_heading
+            };
+        },
+
+        getVal: function(x, y, dir) {
+            var point = create_point(x, y);
+            var res = this.raytracer.trace(point, dir, this.MAX_VAL);
+            return euclidDist(point, res);
+        },
+
+        draw: function(context, verbose) {
+            context.beginPath();
+            context.moveTo(this.x, this.y);
+            context.lineTo(this.x + this.val*Math.cos(this.heading), 
+                           this.y + this.val*Math.sin(this.heading));
+            context.stroke();   
+            
+            if (verbose) {
+                var dispval = Math.round(this.val*1000)/1000;
+                context.fillText(dispval, this.x, this.y);
+            }
+        }
+    }
+} 
+
+function OldDistanceSensor(obstacles, robot, offset_angle, offset_dist, offset_heading, MAX_VAL, rotvel) {
     return {
         x : robot.x + offset_dist*Math.cos(offset_angle + robot.heading),
         y : robot.y + offset_dist*Math.sin(offset_angle + robot.heading),
@@ -219,8 +378,6 @@ function light_sensor(sources, robot, offset_angle, offset_dist) {
             for (var i = 0; i < sources.length; i++) {
                 this.val += this.sources[i].getValue(this.x, this.y);
             }
-            
-            //this.val /= .9;  
         },
 
         getVal : function() {

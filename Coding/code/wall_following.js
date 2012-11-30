@@ -5,14 +5,14 @@ var MAX_DIST = 500,
 // called when "run" is pressed
 function program_init(robot) 
 {
-    robot.dist_sensor.set_offset_angle(PI/5);
+    robot.distance_sensor.set_offset_angle(PI/5);
     robot.set_wheel_velocities(0, 0);
 }
 
 // called every 100 ms after "run" is pressed
 function program_loop(robot)
 {
-    var dist = robot.dist_sensor.read().distance,
+    var dist = robot.distance_sensor.read().distance,
         error = dist - SETPOINT;
 
     var vel_left = MAX_SPEED,

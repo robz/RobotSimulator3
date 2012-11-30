@@ -37,3 +37,23 @@ function createXMLHTTPObject() {
 	}
 	return xmlhttp;
 }
+
+function postFile(filename, text, isAsync, postfunct) {
+	var ajaxRequest;
+
+	if (window.XMLHttpRequest)
+		ajaxRequest = new XMLHttpRequest();
+	else
+		ajaxRequest = new ActiveXObject("Microsoft.XMLHTTP");
+		
+	if (isAsync) {
+		ajaxRequest.onreadystatechange = function() {
+			if (ajaxRequest.readyState==4 && ajaxRequest.status==200) 
+				postfunct(ajaxRequest.responseText);
+		}
+	}
+
+	ajaxRequest.open("POST", "write.php", isAsync);
+	ajaxRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+	ajaxRequest.send("text="+text+"&filename="+filename+"&random="+Math.random());
+}

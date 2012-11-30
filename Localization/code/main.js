@@ -26,8 +26,16 @@ window.onload = function()
         timekeeper
     );
     
-    my_dist_sensor = dist_sensor(
-                        obstacles,
+    var raytracecols = 8,
+        raytracerows = 12,
+        raytracer = create_raytracer(
+                        raytracecols, raytracerows, 
+                        CANVAS_WIDTH/raytracecols, 
+                        CANVAS_HEIGHT/raytracerows, 
+                        obstacles);
+    
+    my_dist_sensor = distance_sensor(
+                        raytracer,
                         robot,
                         0,
                         robot.length/2,

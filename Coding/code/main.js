@@ -3,6 +3,8 @@ var PI = Math.PI,
     KEY_w = 87, KEY_s = 83, KEY_a = 65, KEY_d = 68, KEY_space = 32, KEY_e = 69,
     CANVAS_HEIGHT, CANVAS_WIDTH;
 
+var raytracecols = 8, raytracerows = 12;
+
 var robot, timekeeper, wall_following_field, line_following_field, pauseBtn, obstacles, progCodeMirrors, current_tab = 0;
 
 var programFirstLoaded = false, pauseProgram = true, programStatusText = "running manual";
@@ -24,7 +26,6 @@ window.onload = function()
     var heightstr = getComputedStyle(pauseBtn).height;
     var btnheight = parseFloat(heightstr.substring(0, heightstr.length-2));
     
-    
     obstacles = create_obstacles();
     init_robot(obstacles);
     
@@ -32,7 +33,7 @@ window.onload = function()
     
     wall_following_field = document.getElementById("wall_following_program");
     progCodeMirrors[0] = CodeMirror.fromTextArea(wall_following_field);
-	progCodeMirrors[0].getScrollerElement().style.height = CANVAS_HEIGHT - btnheight - 40;
+    progCodeMirrors[0].getScrollerElement().style.height = CANVAS_HEIGHT - btnheight - 40;
     
     sendRequest("code/wall_following.js", function(xmlhttp_request) {
         progCodeMirrors[0].setValue(xmlhttp_request.responseText);
@@ -71,19 +72,24 @@ function init_robot(obstacles) {
     timekeeper = gametime_timekeeper();
     timekeeper.init();
     
+    raytracer = create_raytracer(
+                  raytracecols, raytracerows, 
+                  CANVAS_WIDTH/raytracecols, 
+                  CANVAS_HEIGHT/raytracerows, obstacles);
+    
     robot = tank_robot(startx, starty, PI/2, 0, 0, width, length, 0, timekeeper);
-
     robot.obstacles = obstacles;
-    robot.dist_sensor = dist_sensor(obstacles, robot, 0, robot.length/2, 0, 500, 0);
-    robot.line_sensor = line_sensor(linestrip(linesensor_points), robot, 0, robot.length, robot.width*2/3, 8);
+    robot.distance_sensor = distance_sensor(raytracer, robot, 0, robot.length/2, 0, 500, 0);
+    robot.lidar_sensor = lidar_sensor(raytracer, robot, 0, robot.length/2, 0, 500, 0, -PI, PI, 100);
+    robot.line_sensor = line_sensor(line_strip(linesensor_points), robot, 0, robot.length, robot.width*2/3, 8);
     robot.sensors = [
-        robot.dist_sensor,
-        robot.line_sensor
+        robot.distance_sensor,
+        robot.line_sensor,
+        robot.lidar_sensor
     ];
 
     setInterval("timekeeper.update(10);", 10);
     setInterval(paintCanvas, 30);
-    
 }
 
 function loadBtnClicked(event) 
@@ -174,7 +180,7 @@ function paintCanvas()
         obstacles[i].draw(context);
     }
     
-    context.strokeStyle = "darkGray";
+    context.strokeStyle = "black";
     context.lineWidth = 1;
     for (var i = 0; i < robot.sensors.length; i++) {
         robot.sensors[i].draw(context);
