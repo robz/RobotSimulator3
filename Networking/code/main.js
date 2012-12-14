@@ -1,53 +1,38 @@
-var PI = Math.PI, MAX_V = .1, DELTA_ALPHA = PI/20, DELTA_V = .005, 
-	KEY_w = 87, KEY_s = 83, KEY_a = 65, KEY_d = 68, KEY_space = 32, KEY_e = 69;
+var PI = Math.PI, MAX_V = .1, DELTA_ALPHA = PI/20, DELTA_V = .005, CANVAS_WIDTH, CANVAS_HEIGHT, 
+    KEY_w = 87, KEY_s = 83, KEY_a = 65, KEY_d = 68, KEY_space = 32, KEY_e = 69;
 
-var my_robot, server_robot, canvas, context;
 
-window.onload = function() 
-{
-    canvas = document.getElementById("canvas");
-    context = canvas.getContext("2d");
+var myID = Math.floor(Math.random()*9999999);
+var robot, other_robots = {};
+var network_object = {};
+
+window.onload = function() {
+    statusDiv = document.getElementById("godcs_status");
     
-	width = 40*SCALE;
-	length = 40*SCALE;
-	startx = 300/2;
-	starty = 100;
-	
-	timekeeper = gametime_timekeeper();
-	timekeeper.init();
-    my_robot = tank_robot(startx, starty, PI/2, 0, 0, width, length, 0, timekeeper);
-    server_robot = tank_robot(startx, starty, PI/2, 0, 0, width, length, 0, timekeeper);
-
-    setInterval("timekeeper.update(10);", 10);
-    setInterval(paintCanvas, 30);
+    init_robot();
+    writeBack(network_object);
     
-    server_push_poll();
-    server_pull_poll();
+    requestFile(writeToTextField);
 }
 
-// var myObject = JSON.parse(myJSONtext);
-// var myJSONText = JSON.stringify(myObject);
-
-function server_push_poll() {
-    var myJSONText = JSON.stringify({x: my_robot.x, y: my_robot.y, heading: my_robot.heading});
+function dealWithUpdate() {
+    var obj = network_object;
     
-    postFile("data/robotstate.txt", myJSONText, true, function(xmlhttp_request) {
-        setTimeout(server_push_poll, 50);
-    });
-}
-
-function server_pull_poll() {
-    sendRequest("data/robotstate.txt", function(xmlhttp_request) {
-        try {
-            var robotstate = JSON.parse(xmlhttp_request.responseText);
-            server_robot.x = robotstate.x;
-            server_robot.y = robotstate.y;
-            server_robot.heading = robotstate.heading;
-        } catch (err) {
-            console.log(err);
+    for (var key in obj) {
+        if (key != myID && obj.hasOwnProperty(key)) {
+            if (!other_robots.hasOwnProperty(key)) {
+                other_robots[key] = tank_robot(CANVAS_WIDTH/2, CANVAS_HEIGHT/2,
+                                               0, 0, 0, 40, 40, 0, timekeeper);
+            }
+            
+            var state = obj[key];
+            other_robots[key].update();
+            other_robots[key].set_wheel_velocities(state.vel1, state.vel2);
+            other_robots[key].x = state.x;
+            other_robots[key].y = state.y;
+            other_robots[key].heading = state.dir;
         }
-        setTimeout(server_pull_poll, 50);
-    });
+    }
 }
 
 function keydown(event) 
@@ -69,22 +54,74 @@ function keydown(event)
 		delta_wheel1_velocity = -DELTA_V;
 		delta_wheel2_velocity = DELTA_V;
 	} else if (key == KEY_space) {
-		delta_wheel1_velocity = -my_robot.wheel1_velocity;
-		delta_wheel2_velocity = -my_robot.wheel2_velocity;
+	    event.preventDefault();
+		delta_wheel1_velocity = -robot.wheel1_velocity;
+		delta_wheel2_velocity = -robot.wheel2_velocity;
 	} else {
 		return;
 	}
 	
-	my_robot.update();
-	my_robot.accelerate_wheels(delta_wheel1_velocity, delta_wheel2_velocity); 
+	robot.update();
+	robot.accelerate_wheels(delta_wheel1_velocity, delta_wheel2_velocity); 
+    
+    network_object[myID] = {vel1: robot.wheel1_velocity, 
+                            vel2: robot.wheel2_velocity,
+                            x: robot.x,
+                            y: robot.y,
+                            dir: robot.heading};
+	writeBack(network_object);
+}
+    
+function init_robot() {
+    var canvas = document.getElementById("canvas");
+    CANVAS_WIDTH = canvas.width;
+    CANVAS_HEIGHT = canvas.height;
+    
+    timekeeper = realtime_timekeeper();
+    //timekeeper.init();
+    
+    robot = tank_robot(CANVAS_WIDTH/2, CANVAS_HEIGHT/2,
+        0, 0, 0, 40, 40, 0, timekeeper
+    );
+    
+    //setInterval("timekeeper.update(10);", 10);
+    setInterval(paintCanvas, 40);
 }
 
 function paintCanvas() 
 {
+    var canvas = document.getElementById("canvas");
+    var context = canvas.getContext("2d");
+        
     context.fillStyle = "lightGray";
     context.fillRect(0, 0, canvas.width, canvas.height);
+ 
+    context.strokeStyle = "green";
+    robot.update();
+    robot.draw(context);
     
-	my_robot.update();
-    server_robot.draw(context);
+    context.strokeStyle = "darkgray";
+    for (var key in other_robots) {
+        if (key != myID && other_robots.hasOwnProperty(key)) {
+            other_robots[key].update();
+            other_robots[key].draw(context);
+        }
+        context.strokeStyle = "gray";
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -1,4 +1,4 @@
-function sendRequest(url,callback,postData) {
+function sendRequest(url, callback, postData) {
 	var req = createXMLHTTPObject();
 	if (!req) return;
 	var method = (postData) ? "POST" : "GET";

@@ -249,9 +249,9 @@ function tank_robot(x, y, heading, wheel1_velocity, wheel2_velocity, length, wid
         },
         
         set_wheel_velocities : function(new_wheel1_velocity, new_wheel2_velocity) {
-            new_wheel1_velocity *= this.fudge_const1;
-            new_wheel2_velocity *= this.fudge_const2;
-        
+            //new_wheel1_velocity *= this.fudge_const1;
+            //new_wheel2_velocity *= this.fudge_const2;
+            
             if (new_wheel1_velocity > MAX_V) {
                 new_wheel1_velocity = MAX_V;
             } else if (new_wheel1_velocity < -MAX_V) {
@@ -272,8 +272,8 @@ function tank_robot(x, y, heading, wheel1_velocity, wheel2_velocity, length, wid
             var new_wheel1_velocity = this.wheel1_velocity + delta_wheel1_velocity,
                 new_wheel2_velocity = this.wheel2_velocity + delta_wheel2_velocity;
                 
-            new_wheel1_velocity *= this.fudge_const1;
-            new_wheel2_velocity *= this.fudge_const2;
+            //new_wheel1_velocity *= this.fudge_const1;
+            //new_wheel2_velocity *= this.fudge_const2;
             
             if (new_wheel1_velocity > MAX_V) {
                 new_wheel1_velocity = MAX_V;

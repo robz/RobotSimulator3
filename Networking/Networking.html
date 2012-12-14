@@ -1,14 +1,20 @@
 <html>
 <head>
 <link rel="stylesheet" type="text/css" href="style.css"/>	
+<script type="text/javascript" src="code/ajax_functions.js"></script>
+<script type="text/javascript" src="code/textAreaSelection.js"></script>
+<script type="text/javascript" src="code/sync_functions.js"></script>
 <script type="text/javascript" src="code/main.js"></script>
-<script type="text/javascript" src="../Coding/code/XMLRequest.js"></script>
 <script type="text/javascript" src="../Steering/code/robot.js"></script>
 <script type="text/javascript" src="../Steering/code/time_keepers.js"></script>
+<script type="text/javascript" src="../Navigation/code/geometry.js"></script>
+<script type="text/javascript" src="../Navigation/code/drawing_functions.js"></script>
 </head>
 <body>
 	<h2>Networking</h2>
-	<h3>click on the panel then use w/a/s/d/space to navigate</h3>
-	<canvas width=1000 height=600 id="canvas" onkeydown=keydown(event) tabindex=1></canvas>
+	<h3>open multiple browser windows to control multiple robots</h3>
+	<canvas width=700 height=400 id="canvas" onkeydown=keydown(event) tabindex=0></canvas>
+	</br>
+	<div id="godcs_status"></div>
 </body>
 </html>
