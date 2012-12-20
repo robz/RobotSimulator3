@@ -1,0 +1,21 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="style.css"/>	
+<script type="text/javascript" src="code/main.js"></script>
+<script type="text/javascript" src="code/MapBuilder.js"></script>
+<script type="text/javascript" src="../Sensors/code/sensors.js"></script>
+<script type="text/javascript" src="../Raytracing/code/raytracer.js"></script>
+<script type="text/javascript" src="../Steering/code/robot.js"></script>
+<script type="text/javascript" src="../Steering/code/time_keepers.js"></script>
+<script type="text/javascript" src="../Navigation/code/geometry.js"></script>
+<script type="text/javascript" src="../Navigation/code/drawing_functions.js"></script>
+<style>
+</style>
+</head>
+<body onkeydown=keydown(event)>
+	<h2>Mapping with no noise</h2>
+	<h3>use w/a/s/d/space to navigate</h3>
+	<canvas width=400 height=400 id="reality"></canvas>
+	<canvas width=400 height=400 id="perception"></canvas>
+</body>
+</html>
