@@ -68,10 +68,6 @@ function keydown(event)
     } else if (key == KEY_space) {
         delta_wheel1_velocity = -robot.wheel1_velocity;
         delta_wheel2_velocity = -robot.wheel2_velocity;
-    } else if (key == KEY_e) {
-        my_particle_filter.verbosity_level = (my_particle_filter.verbosity_level+1)%3;
-    } else if (key == KEY_q) {
-        my_kalman_filter.verbosity_level = (my_kalman_filter.verbosity_level+1)%2;
     } else {
         return;
     }
@@ -87,6 +83,7 @@ function paintCanvas()
     
     map_builder.draw(context);
     
+    perception_context.fillStyle = "lightGray";
     perception_context.fillRect(0, 0, canvas.width, canvas.height);
     map_builder.draw(perception_context);
  
@@ -137,8 +134,8 @@ function make_robot() {
                             0, 
                             500, 
                             0, 
-                            -3*PI/4, 
-                            3*PI/4, 
+                            -PI, 
+                            PI, 
                             270
                             );
         

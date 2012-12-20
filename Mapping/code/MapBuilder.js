@@ -8,10 +8,10 @@ function MapBuilder(x, y, heading, width) {
     this.y = y;
     this.heading = heading;
     this.width = width;
-    
+
     this.col_inc = CANVAS_WIDTH/map_cols;
     this.row_inc = CANVAS_HEIGHT/map_rows;
-    
+
     this.grid = new Array(map_rows);
     for (var r = 0; r < map_rows; r++) {
         this.grid[r] = new Array(map_cols);
@@ -19,29 +19,41 @@ function MapBuilder(x, y, heading, width) {
             this.grid[r][c] = 0;
         }
     }
-    
-    this.apply_lidar_data = function(lidar) {
+
+    this.update_map = function(lidar) {
+		for (var r = 0; r < map_rows; r++) {
+			for (var c = 0; c < map_cols; c++) {
+				this.grid[r][c] = 0;
+			}
+		}
+	
 		for (var i = 0; i < lidar.num_angles; i++) {
             var mag = lidar.val[i];
-        
+
             if (mag < lidar.MAX_VAL-1) {
                 var angle = this.heading + lidar.start_angle + lidar.inc*i,
                     point_x = this.x + mag*cos(angle),
                     point_y = this.y + mag*sin(angle),
                     col = Math.floor(point_x/this.col_inc),
                     row = Math.floor(point_y/this.row_inc);
-                
-				if (this.grid[row][col] < 1) {
-                	this.grid[row][col] += .01;
+				
+				try {
+					this.grid[row][col] = 1;
+					
+					if (this.grid[row][col] > 1) {
+						this.grid[row][col] = 1;
+					}
+				} catch (e) {
+					console.log(row, col);
 				}
             }
         }
     };
-    
-    this.update = function(Vl, Vr, lidar, dt) {
-        var x = this.x, y = this.y, theta = this.heading, L = this.width;
+	
+	this.update_state = function(Vl, Vr, dt) {
+		var x = this.x, y = this.y, theta = this.heading, L = this.width;
         var new_x, new_y, new_heading;
-            
+
         if (abs(Vl - Vr) < .00001) {
             new_x = x + Vl*dt*cos(theta);
             new_y = y + Vl*dt*sin(theta);
@@ -54,16 +66,19 @@ function MapBuilder(x, y, heading, width) {
             new_y = y + R*sin(wd)*sin(theta) - R*cos(wd)*cos(theta) + R*cos(theta);
             new_heading = theta + wd;
         }
-            
+
         new_heading = new_heading%(2*PI);
-        
+
         this.x = new_x;
         this.y = new_y;
         this.heading = new_heading;
-        
-        this.apply_lidar_data(lidar);
+	}
+
+    this.update = function(Vl, Vr, lidar, dt) {
+		this.update_state(Vl, Vr, dt);
+        this.update_map(lidar);
     };
-    
+
     this.draw = function(context) {
         context.fillStyle = "#FFFFFF";
         for (var r = 0; r < map_rows; r++) {
@@ -73,12 +88,12 @@ function MapBuilder(x, y, heading, width) {
                 }
             }
         }
-        
+
         context.fillStyle = "blue";
         context.beginPath();
         context.arc(this.x, this.y, 4, 0, Math.PI*2, false);
         context.fill();
-            
+
         context.strokeStyle = "blue";
         context.beginPath();
         context.moveTo(this.x, this.y);
