@@ -184,6 +184,7 @@ function tank_robot(x, y, heading, wheel1_velocity, wheel2_velocity, length, wid
         sensors: [],
         fudge_const1: 1 - Math.random()*.04,
         fudge_const2: 1 - Math.random()*.04,
+		old_poses: new Array(500),
         
         set : function (x, y, heading, wheel1_velocity, wheel2_velocity, length, width,
                 last_time_updated) 
@@ -207,6 +208,11 @@ function tank_robot(x, y, heading, wheel1_velocity, wheel2_velocity, length, wid
             
             var new_x, new_y, new_heading;
             
+			for (var i = 0; i < this.old_poses.length-1; i++) {
+				this.old_poses[i] = this.old_poses[i+1];
+			}
+			this.old_poses[this.old_poses.length-1] = {x:x, y:y};
+
             if (abs(Vl - Vr) < .00001) {
                 new_x = x + Vl*dt*cos(theta);
                 new_y = y + Vl*dt*sin(theta);
@@ -376,12 +382,21 @@ function tank_robot(x, y, heading, wheel1_velocity, wheel2_velocity, length, wid
                     context.closePath();
                     context.stroke();
                 }
-            }
             
-            var caster = this.get_caster(corners);
-            context.beginPath();
-            context.arc(caster.x, caster.y, WHEEL_WIDTH, 0, 2*PI, false);
-            context.stroke();
+            	var caster = this.get_caster(corners);
+            	context.beginPath();
+            	context.arc(caster.x, caster.y, WHEEL_WIDTH, 0, 2*PI, false);
+            	context.stroke();
+			} else  {
+				context.beginPath();
+				context.moveTo(this.x, this.y);
+				for (var i = this.old_poses.length-1; i >= 0; i-=1) {
+					if (this.old_poses[i]) {
+						context.lineTo(this.old_poses[i].x, this.old_poses[i].y);
+					}
+				}
+				context.stroke();
+			}
         }
     };
 }

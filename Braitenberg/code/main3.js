@@ -1,8 +1,8 @@
 var PI = Math.PI, MAX_V = .5, DELTA_ALPHA = PI/20, DELTA_V = .005, CANVAS_WIDTH, CANVAS_HEIGHT, 
     KEY_w = 87, KEY_s = 83, KEY_a = 65, KEY_d = 68, KEY_space = 32, KEY_e = 69;
 
-var NUM_ROBOTS = 2000, NUM_SOURCES = 1, SOURCE_VAR = 60, 
-    NUM_EXPLORER_SOURCES = 0;
+var NUM_ROBOTS = 2000, NUM_SOURCES = 1, SOURCE_VAR = 60, NUM_EXPLORER_SOURCES = 0,
+	ROBOT_COLS = 4, ROBOT_ROWS = 3; ROBOT_DIRS = 3;
 var FEAR = 0, HATE = 1, LOVE = 2, EXPLORE = 3;
 var braitenberg_colors = [
         "black",
@@ -19,8 +19,8 @@ window.onload = function()
     CANVAS_WIDTH = canvas.width;
     CANVAS_HEIGHT = canvas.height;
 
-    width = 40*SCALE;
-    length = 40*SCALE;
+    width = 2*40*SCALE;
+    length = 2*40*SCALE;
     
     timekeeper = gametime_timekeeper();
     timekeeper.init();
@@ -44,11 +44,26 @@ window.onload = function()
         }
     }
     
-    robots = new Array(NUM_ROBOTS);
-    for (var i = 0; i < NUM_ROBOTS; i++) {
-        startx = Math.random()*(CANVAS_WIDTH-200)+100;
+    robots = new Array(ROBOT_COLS*ROBOT_ROWS*ROBOT_DIRS);
+	
+    // robots = new Array(NUM_ROBOTS);
+    
+	//for (var i = 0; i < NUM_ROBOTS; i++) {
+
+	var i = 0;
+    for (var x = 1; x < ROBOT_COLS + 1; x++) {
+    for (var y = 1; y < ROBOT_ROWS + 1; y++) {
+    for (var t = 0; t < ROBOT_DIRS; t++) {
+		startx = x*(CANVAS_WIDTH/(ROBOT_COLS + 1));
+		starty = y*(CANVAS_HEIGHT/(ROBOT_ROWS + 1));
+		startdir = t*(2*Math.PI/ROBOT_DIRS);
+
+		/*
+		startx = Math.random()*(CANVAS_WIDTH-200)+100;
         starty = Math.random()*(CANVAS_HEIGHT-200)+100;
         startdir = Math.random()*2*PI;
+		*/
+
         robots[i] = tank_robot(startx, starty, startdir, 0, 0, width, length, 0, timekeeper);
         
         var robot_sources = sources;
@@ -80,9 +95,11 @@ window.onload = function()
         
         robots[i].sensors.push(lightsensor1);
         robots[i].sensors.push(lightsensor2);
-    }
+    	
+		i++;
+	}}}
 
-    setInterval("timekeeper.update(10);", 10);
+    setInterval("timekeeper.update(5);", 5);
     setInterval(paintCanvas, 30);
     setInterval(robot_loops, 100);
 }
