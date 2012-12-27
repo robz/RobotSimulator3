@@ -119,7 +119,7 @@ function make_robot() {
                 timekeeper
                 );
     
-    var raytracer = create_raytracer(
+    var raytracer = new Raytracer(
                         raytracecols, 
 						raytracerows, 
                         CANVAS_WIDTH/raytracecols, 
