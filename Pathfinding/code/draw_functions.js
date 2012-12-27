@@ -57,7 +57,23 @@ function draw_grid(obstacles, cols, rows)
 	}	
 }
 
-function draw_point_lists(point_list) 
+function draw_rc_list(rc_list) {
+	context.lineWidth = 1;
+	context.strokeStyle = "red";
+	
+	context.beginPath();
+	context.moveTo(rc_list[0].x*CELL_WIDTH + CELL_WIDTH/2, 
+		rc_list[0].y*CELL_HEIGHT + CELL_HEIGHT/2);
+		
+	for(var i = 1; i < rc_list.length; i++) {
+		context.lineTo(rc_list[i].x*CELL_WIDTH + CELL_WIDTH/2, 
+			rc_list[i].y*CELL_HEIGHT + CELL_HEIGHT/2);
+	}
+	
+	context.stroke();
+}
+
+function draw_point_list(point_list) 
 {
 	context.lineWidth = 2;
 	context.strokeStyle = "green";
