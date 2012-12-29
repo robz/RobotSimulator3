@@ -132,7 +132,7 @@ function make_robot() {
                             0, 
                             0, 
                             0, 
-                            500, 
+                            CANVAS_WIDTH/2, 
                             0, 
                             -PI, 
                             PI, 

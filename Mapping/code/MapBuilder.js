@@ -23,7 +23,7 @@ function MapBuilder(x, y, heading, width) {
     this.update_map = function(lidar) {
 		for (var r = 0; r < map_rows; r++) {
 			for (var c = 0; c < map_cols; c++) {
-				this.grid[r][c] = 0;
+				//this.grid[r][c] = 0;
 			}
 		}
 	
@@ -38,10 +38,10 @@ function MapBuilder(x, y, heading, width) {
                     row = Math.floor(point_y/this.row_inc);
 				
 				try {
-					this.grid[row][col] = 1;
+					this.grid[row][col] += 1;
 					
-					if (this.grid[row][col] > 1) {
-						this.grid[row][col] = 1;
+					if (this.grid[row][col] > 5) {
+						this.grid[row][col] = 5;
 					}
 				} catch (e) {
 					console.log(row, col);
@@ -80,10 +80,12 @@ function MapBuilder(x, y, heading, width) {
     };
 
     this.draw = function(context) {
-        context.fillStyle = "#FFFFFF";
+        // context.fillStyle = "#FFFFFF";
         for (var r = 0; r < map_rows; r++) {
             for (var c = 0; c < map_cols; c++) {
                 if (this.grid[r][c] > 0) {
+					var num = 18*7 - 18*(this.grid[r][c]+1);
+					context.fillStyle = "#"+num+"0000";
 					context.fillRect(c*this.col_inc, r*this.row_inc, this.col_inc, this.row_inc);
                 }
             }
