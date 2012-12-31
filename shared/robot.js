@@ -229,11 +229,8 @@ function tank_robot(x, y, heading, wheel1_velocity, wheel2_velocity, length, wid
 		// new_x = x + dt*(Vl + Vr)*cos(theta);
 		// new_y = y + dt*(Vl + Vr)*sin(theta);
             
-		// new_x = x + R*sin(wd + theta) - R*sin(theta);
-		// new_y = y - R*cos(wd + theta) + R*cos(theta);
-
-		new_x = x*Math.exp((Vl + Vr)*cos(theta)*dt);
-		new_y = y*Math.exp((Vl + Vr)*sin(theta)*dt);
+		new_x = x + R*sin(wd + theta) - R*sin(theta);
+		new_y = y - R*cos(wd + theta) + R*cos(theta);
 	    }
             
             new_heading = new_heading%(2*PI);
