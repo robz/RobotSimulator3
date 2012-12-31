@@ -28,7 +28,7 @@ window.onload = function()
     
     var raytracecols = 8,
         raytracerows = 12,
-        raytracer = create_raytracer(
+        raytracer = new Raytracer(
                         raytracecols, raytracerows, 
                         CANVAS_WIDTH/raytracecols, 
                         CANVAS_HEIGHT/raytracerows, 

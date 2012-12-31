@@ -45,11 +45,10 @@ window.onload=function() {
 function clicked(event) {
 	var mouseX, mouseY;
 
-    if(event.offsetX) {
+    if (event.offsetX) {
         mouseX = event.offsetX;
         mouseY = event.offsetY;
-    }
-    else if(event.layerX) {
+    } else if (event.layerX) {
         mouseX = event.layerX-canvas.offsetLeft;
         mouseY = event.layerY-canvas.offsetTop;
     }
@@ -75,11 +74,16 @@ function clicked(event) {
 		
 		var data_grid = create_zeroed_grid(COLS, ROWS);
 		var path = astar(first_pos, last_pos, problem, data_grid);
+		
 		draw_grid(obstacle_grid, COLS, ROWS);
 		draw_search_result(data_grid, first_pos, last_pos, COLS, ROWS);
-		if(path != null) {
+		
+		if (path != null) {
 			var point_list = to_point_list(problem, first_pos, path);
-			draw_point_lists(point_list);
+			draw_point_list(point_list);
+			
+			var rc_list = shortcut_rc_list(to_rc_list(problem, first_pos, path), obstacle_grid);
+			draw_rc_list(rc_list);
 		}
 		
 		has_clicked = false;
@@ -88,28 +92,35 @@ function clicked(event) {
 
 function create_zeroed_grid(cols, rows) {
 	var grid = new Array(cols);
-	for(var x = 0; x < cols; x++) {
+	
+	for (var x = 0; x < cols; x++) {
 		grid[x] = new Array(rows);
-		for(var y = 0; y < rows; y++) {
+		
+		for (var y = 0; y < rows; y++) {
 			grid[x][y] = 0;
 		}
 	}
+	
 	return grid;
 }
 
 function print_grid() {
-	var prefix1 = "";
-	var str = "[";
-	for(var x = 0; x < COLS; x++) {
+	var prefix1 = "",
+		str = "[";
+	
+	for (var x = 0; x < COLS; x++) {
 		str += prefix1+"[";
 		var prefix2 = "";
-		for(var y = 0; y < ROWS; y++) {
+		
+		for (var y = 0; y < ROWS; y++) {
 			str += prefix2+obstacle_grid[x][y];
 			prefix2 = ",";
 		}
+		
 		str += "]";
 		prefix1 = ",\n";
 	}
+	
 	str += "]";
 	console.log(str);
 }

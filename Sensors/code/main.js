@@ -39,7 +39,7 @@ window.onload = function()
       ])));
     }
     
-    raytracer = create_raytracer(COLS, ROWS, CANVAS_WIDTH/COLS, CANVAS_HEIGHT/ROWS, obstacles);
+    raytracer = new Raytracer(COLS, ROWS, CANVAS_WIDTH/COLS, CANVAS_HEIGHT/ROWS, obstacles);
     
     lineStrip = line_strip(points);
     

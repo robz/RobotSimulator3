@@ -208,34 +208,41 @@ function euclidean_heuristic(pos, goal) {
 				   + (pos.y - goal.y)*(pos.y - goal.y));
 }
 	
-// "shortcut" = manhattan incorporating diagonals
+// "shortcut" = manhattan incorporating 45 degree diagonals
 function shortcut_heuristic(pos, goal) {
 	var dx = Math.abs(pos.x - goal.x),
-		dy = Math.abs(pos.y - goal.y);
-	var min = (dx < dy) ? dx : dy,
+		dy = Math.abs(pos.y - goal.y),
+		min = (dx < dy) ? dx : dy,
 		max = (dx > dy) ? dx : dy;
+		
 	return Math.sqrt(2*min*min) + (max-min);
 }
 
 //
-// Logistics functions
+// Utility functions
 //
 
 function copy_path(path) {
 	var new_path = new Array(path.length);
+	
 	for (var i = 0; i < path.length; i++) {
 		new_path[i] = path[i];
 	}
+	
 	return new_path;
 }
 
+// takes in a path (a list of actions)
+// returns a point_list (a list of points)
 function to_point_list(problem, start_pos, path) {
 	var point_list = new Array(path.length+1);
 	
 	point_list[0] = problem.create_pos(start_pos.x, start_pos.y, start_pos.dir);
+	
 	for(var i = 1; i < point_list.length; i++) {
 		point_list[i] = problem.next_pos(point_list[i-1], path[i-1]);
 	}
+	
 	for(var i = 0; i < point_list.length; i++) {
 		point_list[i].x *= CELL_WIDTH;
 		point_list[i].x += CELL_WIDTH/2;
@@ -246,37 +253,149 @@ function to_point_list(problem, start_pos, path) {
 	return point_list;
 }
 
-function smooth_path(path) {
-	var newpath = new Array(path.length);
-	for (i = 0; i < path.length; i++) {
-		newpath[i] = {x:path[i].x,y:path[i].y};
+// Credit: Sebastian Thrun, How to Design a Robotic Car, Udacity
+function smooth_path(point_list) {
+	var new_list = new Array(point_list.length);
+	
+	for (i = 0; i < point_list.length; i++) {
+		new_list[i] = {x:point_list[i].x,y:point_list[i].y};
 	}
 	
 	var weight_data = .5, weight_smooth = .2;
 	var tolerance = .0001, delta = 1;
+	
     while (delta > tolerance) {
         delta = 0;
-        for (i = 1; i < path.length-1; i++) { 
-            var old1 = newpath[i].x,
-				old2 = newpath[i].y;
+		
+        for (i = 1; i < point_list.length-1; i++) { 
+            var old1 = new_list[i].x,
+				old2 = new_list[i].y;
             
-            newpath[i].x += weight_data*(path[i].x - newpath[i].x);
-            newpath[i].y += weight_data*(path[i].y - newpath[i].y);
+            new_list[i].x += weight_data*(point_list[i].x - new_list[i].x);
+            new_list[i].y += weight_data*(point_list[i].y - new_list[i].y);
             
-            newpath[i].x += weight_smooth*(newpath[i-1].x + newpath[i+1].x - 2*newpath[i].x);
-            newpath[i].y += weight_smooth*(newpath[i-1].y + newpath[i+1].y - 2*newpath[i].y);
+            new_list[i].x += weight_smooth*(new_list[i-1].x + new_list[i+1].x - 2*new_list[i].x);
+            new_list[i].y += weight_smooth*(new_list[i-1].y + new_list[i+1].y - 2*new_list[i].y);
 			
-			if( i > 1 && i < path.length-2) {
-				newpath[i].x += .5*weight_smooth*( 2*newpath[i-1].x - newpath[i-2].x - newpath[i].x )
-				newpath[i].y += .5*weight_smooth*( 2*newpath[i-1].y - newpath[i-2].y - newpath[i].y )
+			if( i > 1 && i < point_list.length-2) {
+				new_list[i].x += .5*weight_smooth*( 2*new_list[i-1].x - new_list[i-2].x - new_list[i].x )
+				new_list[i].y += .5*weight_smooth*( 2*new_list[i-1].y - new_list[i-2].y - new_list[i].y )
 					
-				newpath[i].x += .5*weight_smooth*( 2*newpath[i+1].x - newpath[i+2].x - newpath[i].x )
-				newpath[i].y += .5*weight_smooth*( 2*newpath[i+1].y - newpath[i+2].y - newpath[i].y )
+				new_list[i].x += .5*weight_smooth*( 2*new_list[i+1].x - new_list[i+2].x - new_list[i].x )
+				new_list[i].y += .5*weight_smooth*( 2*new_list[i+1].y - new_list[i+2].y - new_list[i].y )
 			}
             
-            delta += Math.abs(old1 - newpath[i].x);
-            delta += Math.abs(old2 - newpath[i].y);
+            delta += Math.abs(old1 - new_list[i].x);
+            delta += Math.abs(old2 - new_list[i].y);
 		}
 	}
-	return newpath;
+	
+	return new_list;
 }
+
+// takes in a path (a list of actions)
+// returns a rc_list (a list of rows/cols)
+function to_rc_list(problem, start_pos, path) {
+	var rc_list = new Array(path.length+1);
+	
+	rc_list[0] = problem.create_pos(start_pos.x, start_pos.y, start_pos.dir);
+	
+	for(var i = 1; i < rc_list.length; i++) {
+		rc_list[i] = problem.next_pos(rc_list[i-1], path[i-1]);
+	}
+	
+	return rc_list;
+}
+
+// takes in a list of row/cols
+// returns a list of row/cols
+function shortcut_rc_list(rc_list, obstacle_grid) {
+	var new_list = [];
+	
+	new_list.push(rc_list[0]);
+	
+	var i = 0;
+	while (i < rc_list.length - 1) {
+		var j = i + 1;
+		
+		while (j < rc_list.length && is_valid_path(rc_list[i], rc_list[j], obstacle_grid)) {
+			j++;
+		}
+		
+		new_list.push(rc_list[j - 1]);
+		i = j - 1;
+	}
+	
+	return new_list;
+}
+
+var SHORTCUT_PADDING = Math.sqrt(2)/2 + .1;
+
+function is_valid_path(p1, p2, obstacle_grid) {
+	var minr, maxr, minc, maxc;
+	
+	if (p1.y < p2.y) {
+		minr = p1.y;
+		maxr = p2.y;
+	} else {
+		minr = p2.y;
+		maxr = p1.y;
+	}
+	
+	if (p1.x < p2.x) {
+		minc = p1.x;
+		maxc = p2.x;
+	} else {
+		minc = p2.x;
+		maxc = p1.x;
+	}
+	
+	var line = create_line(p1, p2);
+
+	for (var r = minr; r <= maxr; r++) {
+		for (var c = minc; c <= maxc; c++) {
+			if (obstacle_grid[c][r] == 1) {
+				if (line.isV) {
+					if (Math.abs(c - line.b) <= SHORTCUT_PADDING) {
+						return false;
+					}
+				} else {
+					var minx = (c + r*line.m - line.m*line.b)/(line.m*line.m + 1),
+						dist = Math.sqrt((c - minx)*(c - minx)
+							+ (r - line.m*minx - line.b)*(r - line.m*minx - line.b));
+					
+					if (dist <= SHORTCUT_PADDING) {
+						return false;
+					}
+				}
+			}
+		}
+	}
+	
+	return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

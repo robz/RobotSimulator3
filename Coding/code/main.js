@@ -72,7 +72,7 @@ function init_robot(obstacles) {
     timekeeper = gametime_timekeeper();
     timekeeper.init();
     
-    raytracer = create_raytracer(
+    raytracer = new Raytracer(
                   raytracecols, raytracerows, 
                   CANVAS_WIDTH/raytracecols, 
                   CANVAS_HEIGHT/raytracerows, obstacles);
