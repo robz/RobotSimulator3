@@ -183,10 +183,12 @@ function Raytracer(cols, rows, cell_width, cell_height, obstacles) {
 	};
 }
 
-function RTBox(x, y, width, height) {
+function RTBox(x, y, width, height, row, col) {
     this.segments = null;
     this.adj_boxes = null;
     this.edges = null;
+	this.row = row;
+	this.col = col;
     
     this.containsPoint = function(p) {
 	    return p.x >= x && p.x <= x+width && p.y >= y && p.y <= y+height;
@@ -200,7 +202,7 @@ function draw_line(context, p1, p2) {
     context.stroke();
 }
 
-function GridRaytracer(rows, cols, cell_width, cell_height) {
+function Gridtracer(rows, cols, cell_width, cell_height) {
     var points = new Array((rows+1)*(cols+1)),
         col_segs = new Array(rows),
         row_segs = new Array(cols),
@@ -241,7 +243,7 @@ function GridRaytracer(rows, cols, cell_width, cell_height) {
         for (var c = 0; c < cols; c++) {
             var x = c*cell_width, 
                 y = r*cell_height;
-            boxes[r][c] = new RTBox(x, y, cell_width, cell_height);
+            boxes[r][c] = new RTBox(x, y, cell_width, cell_height, r, c);
         }
     }
     
@@ -336,10 +338,12 @@ function GridRaytracer(rows, cols, cell_width, cell_height) {
 		while (box && count > 0) {
 			var ray = create_line_from_vector(intersection, heading, 1000);
 			
-			if (obstacle_grid[box.row][box.col]) {
-				set_callback(box.row, box.col);
+			if (occupancy_grid[box.row][box.col] == 1) {
+				if (set_callback) {
+					set_callback(box.row, box.col);
+				}
 				return true;
-			} else {
+			} else if (unset_callback && occupancy_grid[box.row][box.col] == 0) {
 				unset_callback(box.row, box.col);
 			}
 		
@@ -367,15 +371,6 @@ function GridRaytracer(rows, cols, cell_width, cell_height) {
 		
 		for (var c = 0; c < cols+1; c++) {
 			draw_line(context, points[0][c], points[rows][c]);
-		}
-		
-		context.fillStyle = "black";
-		for (var r = 0; r < rows; r++) {
-			for (var c = 0; c < cols; c++) {
-				context.fillText(""+boxes[r][c].edges.length, 
-								 c*cell_width+cell_width/2, 
-								 r*cell_height+cell_height/2);
-			}
 		}
 	};
 }

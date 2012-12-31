@@ -6,26 +6,28 @@ var robot, timekeeper, obstacles, map_builder;
 
 var num_obstacles = 10,
     obstacle_pad = 20,
-    obstacle_radius = 20;
-	raytracecols = 20,        
+    obstacle_radius = 30,
+	raytracecols = 20,  
     raytracerows = 20,
-    map_builder_period = 10;
+    map_builder_period = 30,
+	NUM_RAYS = 100;
 
 window.onload = function() 
 {
     canvas = document.getElementById("reality");
     CANVAS_WIDTH = canvas.width;
     CANVAS_HEIGHT = canvas.height;
-	context = canvas.getContext("2d");   
-	perception_context = document.getElementById("perception").getContext("2d");  
+	context = canvas.getContext("2d");
+	perception_context = document.getElementById("perception").getContext("2d");
     
     make_obstacles();
-   	make_robot(); 
+   	make_robot();
    	map_builder = new MapBuilder(robot.x, robot.y, robot.heading, robot.width);
 
     setInterval(paintCanvas, 30);
-                       
     setTimeout(update_builder, map_builder_period);
+	
+	setTimeout('console.log("dd")', 3000);
 }
 
 var prev_time = 0;
@@ -81,7 +83,7 @@ function paintCanvas()
     context.fillStyle = "lightGray";
     context.fillRect(0, 0, canvas.width, canvas.height);
     
-    map_builder.draw(context);
+    //map_builder.draw(context);
     
     perception_context.fillStyle = "lightGray";
     perception_context.fillRect(0, 0, canvas.width, canvas.height);
@@ -93,7 +95,7 @@ function paintCanvas()
         robot.sensors[i].draw(context);
     }
     
-    context.strokeStyle = "black";
+    context.strokeStyle = "blue";
     context.lineWidth = 3;
     for (var i = 0; i < obstacles.length; i++) {
         obstacles[i].draw(context);
@@ -132,11 +134,11 @@ function make_robot() {
                             0, 
                             0, 
                             0, 
-                            CANVAS_WIDTH/2, 
+                            CANVAS_WIDTH/2 - 10, 
                             0, 
-                            -PI, 
-                            PI, 
-                            270
+                            -PI/2, 
+                            PI/2, 
+                            NUM_RAYS
                             );
         
     robot.sensors = [robot.lidar_sensor];
@@ -148,9 +150,9 @@ function make_obstacles() {
 	for (var i = 0; i < num_obstacles; i++) {
         var seedx = Math.random()*(CANVAS_WIDTH - 2*obstacle_pad) + obstacle_pad,
             seedy = Math.random()*(CANVAS_HEIGHT - 2*obstacle_pad) + obstacle_pad,
-            a1 = Math.random()*Math.PI*2/3,
-            a2 = Math.random()*Math.PI*2/3,
-            a3 = Math.random()*Math.PI*2/3;
+            a1 = Math.random()*(Math.PI*2/3 - Math.PI/6) + Math.PI/6,
+            a2 = Math.random()*(Math.PI*2/3 - Math.PI/6) + Math.PI/6,
+            a3 = Math.random()*(Math.PI*2/3 - Math.PI/6) + Math.PI/6;
             
         obstacles[i] = obstacle(create_polygon([
           create_point(seedx + obstacle_radius*Math.cos(a1), 

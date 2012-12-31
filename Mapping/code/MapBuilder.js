@@ -1,57 +1,88 @@
 var sin = Math.sin, cos = Math.cos, abs = Math.abs;
 
-var map_rows = 100,
-    map_cols = 100;
+var map_rows = 60,
+    map_cols = 60;
 
 function MapBuilder(x, y, heading, width) {
-    this.x = x;
-    this.y = y;
+	this.pos = {x:x, y:y};
     this.heading = heading;
     this.width = width;
 
-    this.col_inc = CANVAS_WIDTH/map_cols;
-    this.row_inc = CANVAS_HEIGHT/map_rows;
+    col_inc = CANVAS_WIDTH/map_cols;
+    row_inc = CANVAS_HEIGHT/map_rows;
 
-    this.grid = new Array(map_rows);
+    grid = new Array(map_rows);
     for (var r = 0; r < map_rows; r++) {
-        this.grid[r] = new Array(map_cols);
+        grid[r] = new Array(map_cols);
         for (var c = 0; c < map_cols; c++) {
-            this.grid[r][c] = 0;
+            grid[r][c] = 0;
         }
     }
+	
+    temp_grid = new Array(map_rows);
+    for (var r = 0; r < map_rows; r++) {
+        temp_grid[r] = new Array(map_cols);
+        for (var c = 0; c < map_cols; c++) {
+            temp_grid[r][c] = 0;
+        }
+    }
+	
+	this.visited_grid = new Array(map_rows);
+	var visited_grid = this.visited_grid;
+    for (var r = 0; r < map_rows; r++) {
+        visited_grid[r] = new Array(map_cols);
+        for (var c = 0; c < map_cols; c++) {
+            visited_grid[r][c] = 0;
+        }
+    }
+	
+	this.gridtracer = new Gridtracer(map_rows, map_cols, col_inc, row_inc);
 
     this.update_map = function(lidar) {
 		for (var r = 0; r < map_rows; r++) {
 			for (var c = 0; c < map_cols; c++) {
-				//this.grid[r][c] = 0;
+				temp_grid[r][c] = 0;
+				visited_grid[r][c] = 0;
 			}
 		}
 	
 		for (var i = 0; i < lidar.num_angles; i++) {
-            var mag = lidar.val[i];
-
-            if (mag < lidar.MAX_VAL-1) {
-                var angle = this.heading + lidar.start_angle + lidar.inc*i,
-                    point_x = this.x + mag*cos(angle),
-                    point_y = this.y + mag*sin(angle),
-                    col = Math.floor(point_x/this.col_inc),
-                    row = Math.floor(point_y/this.row_inc);
+            var mag = lidar.val[i],
+				angle = this.heading + lidar.start_angle + lidar.inc*i,
+                point_x = this.pos.x + mag*cos(angle),
+                point_y = this.pos.y + mag*sin(angle),
+                col = Math.floor(point_x/col_inc),
+                row = Math.floor(point_y/row_inc);
 				
-				try {
-					this.grid[row][col] += 1;
-					
-					if (this.grid[row][col] > 5) {
-						this.grid[row][col] = 5;
+			if (row >= 0 && row < map_rows && col >= 0 && col < map_cols) {
+				if (mag < lidar.MAX_VAL - 1) {
+					grid[row][col] += 2;
+					if (grid[row][col] > 9) {
+						grid[row][col] = 9;
 					}
-				} catch (e) {
-					console.log(row, col);
 				}
-            }
-        }
+				
+				temp_grid[row][col] = 1;
+			}
+				
+			this.gridtracer.trace(this.pos, angle, temp_grid, 
+				function(r, c) {
+					visited_grid[r][c] = 1;
+					
+					grid[r][c] -= 1;
+					if (grid[r][c] < 0) {
+						grid[r][c] = 0;
+					}
+				},
+				function(r, c) {
+					visited_grid[r][c] = 2;
+				}
+			);
+		}
     };
 	
 	this.update_state = function(Vl, Vr, dt) {
-		var x = this.x, y = this.y, theta = this.heading, L = this.width;
+		var x = this.pos.x, y = this.pos.y, theta = this.heading, L = this.width;
         var new_x, new_y, new_heading;
 
         if (abs(Vl - Vr) < .00001) {
@@ -69,10 +100,10 @@ function MapBuilder(x, y, heading, width) {
 
         new_heading = new_heading%(2*PI);
 
-        this.x = new_x;
-        this.y = new_y;
+        this.pos.x = new_x;
+        this.pos.y = new_y;
         this.heading = new_heading;
-	}
+	};
 
     this.update = function(Vl, Vr, lidar, dt) {
 		this.update_state(Vl, Vr, dt);
@@ -80,27 +111,34 @@ function MapBuilder(x, y, heading, width) {
     };
 
     this.draw = function(context) {
-        // context.fillStyle = "#FFFFFF";
+        context.fillStyle = "black";
+		context.fillStyle = "lightGreen";
         for (var r = 0; r < map_rows; r++) {
             for (var c = 0; c < map_cols; c++) {
-                if (this.grid[r][c] > 0) {
-					var num = 18*7 - 18*(this.grid[r][c]+1);
-					context.fillStyle = "#"+num+"0000";
-					context.fillRect(c*this.col_inc, r*this.row_inc, this.col_inc, this.row_inc);
+				if (grid[r][c] > 0) {
+					context.fillStyle = "black";
+					context.fillRect(c*col_inc, r*row_inc, col_inc, row_inc);
+					context.fillStyle = "white";
+					context.fillText(grid[r][c]+"", c*col_inc, r*row_inc + row_inc);
                 }
+				
+                if (visited_grid[r][c] == 1) {
+					context.fillStyle = "lightGreen";
+					context.fillRect(c*col_inc, r*row_inc, col_inc, row_inc);
+                } 
             }
         }
 
         context.fillStyle = "blue";
         context.beginPath();
-        context.arc(this.x, this.y, 4, 0, Math.PI*2, false);
+        context.arc(this.pos.x, this.pos.y, 4, 0, Math.PI*2, false);
         context.fill();
 
         context.strokeStyle = "blue";
         context.beginPath();
-        context.moveTo(this.x, this.y);
-        context.lineTo(this.x + 20*Math.cos(this.heading), 
-                       this.y + 20*Math.sin(this.heading));
+        context.moveTo(this.pos.x, this.pos.y);
+        context.lineTo(this.pos.x + 20*Math.cos(this.heading), 
+                       this.pos.y + 20*Math.sin(this.heading));
         context.stroke();
     };
 }

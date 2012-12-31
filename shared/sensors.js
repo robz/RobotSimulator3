@@ -152,9 +152,11 @@ function obstacle(polygon) {
 function lidar_sensor(raytracer, robot, offset_angle, offset_dist, offset_heading, MAX_VAL, rotvel, start_angle, end_angle, num_angles) {
     return {
         raytracer: raytracer,
-        x: robot.x + offset_dist*Math.cos(offset_angle + robot.heading),
-        y: robot.y + offset_dist*Math.sin(offset_angle + robot.heading),
-        heading: robot.heading + offset_heading,
+        pos: {
+			x: robot.x + offset_dist*Math.cos(offset_angle + robot.heading),
+			y: robot.y + offset_dist*Math.sin(offset_angle + robot.heading)
+        },
+		heading: robot.heading + offset_heading,
         offset_angle: offset_angle,
         offset_dist: offset_dist,
         offset_heading: offset_heading,
@@ -167,11 +169,11 @@ function lidar_sensor(raytracer, robot, offset_angle, offset_dist, offset_headin
         inc: (end_angle-start_angle)/(num_angles),
 
         update : function(robot, delta_time) {
-            this.x = robot.x + this.offset_dist*Math.cos(this.offset_angle + robot.heading);
-            this.y = robot.y + this.offset_dist*Math.sin(this.offset_angle + robot.heading);
+            this.pos.x = robot.x + this.offset_dist*Math.cos(this.offset_angle + robot.heading);
+            this.pos.y = robot.y + this.offset_dist*Math.sin(this.offset_angle + robot.heading);
             this.offset_heading = (this.offset_heading + this.rotvel*delta_time)%(2*PI);
             this.heading = robot.heading + this.offset_heading; 
-            this.setVals(this.x, this.y, this.heading, this.MAX_VAL); 
+            this.setVals(this.pos, this.heading, this.MAX_VAL); 
         },
         
         set_offset_angle: function(angle) {
@@ -185,14 +187,14 @@ function lidar_sensor(raytracer, robot, offset_angle, offset_dist, offset_headin
             };
         },
         
-        setVals: function(x, y, dir, max_val) {
+        setVals: function(point, dir, max_val) {
             for (var i = 0; i < this.num_angles; i++) {
-                this.val[i] = this.getVal(x, y, dir+this.start_angle+this.inc*i, max_val);
+				var angle = dir + this.start_angle + this.inc*i;
+                this.val[i] = this.getVal(point, angle, max_val);
             }
         },
 
-        getVal: function(x, y, dir, max_val) {
-            var point = create_point(x, y);
+        getVal: function(point, dir, max_val) {
             var res = this.raytracer.trace(point, dir, max_val);
             return euclidDist(point, res);
         },
@@ -203,9 +205,9 @@ function lidar_sensor(raytracer, robot, offset_angle, offset_dist, offset_headin
               var angle = this.start_angle+this.inc*i;
               var dist = this.val[i];
               context.beginPath();
-              context.moveTo(this.x, this.y);
-              context.lineTo(this.x + dist*Math.cos(this.heading+angle), 
-                             this.y + dist*Math.sin(this.heading+angle));
+              context.moveTo(this.pos.x, this.pos.y);
+              context.lineTo(this.pos.x + dist*Math.cos(this.heading+angle), 
+                             this.pos.y + dist*Math.sin(this.heading+angle));
               context.stroke();   
             }
         }
