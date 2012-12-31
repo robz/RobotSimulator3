@@ -35,7 +35,7 @@ function keydown(event, index)
 	if (robots[index].type == ACKERMAN || robots[index].type == CRAB) {
 		keydown_ackerman_crab(event, robots[index]);
 	} else if (robots[index].type == TANK) {
-		keydown_tank(event, robots[index]);
+		keydown_test_tank(event, robots[index]);
 	} else if (robots[index].type == COLUMBIA) {
 		keydown_columbia(event, robots[index]);
 	}
