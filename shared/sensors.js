@@ -152,10 +152,10 @@ function obstacle(polygon) {
 function lidar_sensor(raytracer, robot, offset_angle, offset_dist, offset_heading, MAX_VAL, rotvel, start_angle, end_angle, num_angles) {
     return {
         raytracer: raytracer,
-        pos: {
-			x: robot.x + offset_dist*Math.cos(offset_angle + robot.heading),
-			y: robot.y + offset_dist*Math.sin(offset_angle + robot.heading)
-        },
+        pos: create_point(
+			robot.x + offset_dist*Math.cos(offset_angle + robot.heading),
+			robot.y + offset_dist*Math.sin(offset_angle + robot.heading)
+        ),
 		heading: robot.heading + offset_heading,
         offset_angle: offset_angle,
         offset_dist: offset_dist,
@@ -167,6 +167,7 @@ function lidar_sensor(raytracer, robot, offset_angle, offset_dist, offset_headin
         num_angles: num_angles,
         val: new Array(num_angles),
         inc: (end_angle-start_angle)/(num_angles),
+		temp_point: create_point(null, null),
 
         update : function(robot, delta_time) {
             this.pos.x = robot.x + this.offset_dist*Math.cos(this.offset_angle + robot.heading);
@@ -195,20 +196,20 @@ function lidar_sensor(raytracer, robot, offset_angle, offset_dist, offset_headin
         },
 
         getVal: function(point, dir, max_val) {
-            var res = this.raytracer.trace(point, dir, max_val);
-            return euclidDist(point, res);
+            this.raytracer.trace(point, dir, max_val, this.temp_point);
+            return euclidDist(point, this.temp_point);
         },
 
         draw: function(context, verbose) {
             context.strokeStyle = "rgba(100, 100, 100, 0.2)";
             for (var i = 0; i < this.num_angles; i++) {
-              var angle = this.start_angle+this.inc*i;
-              var dist = this.val[i];
-              context.beginPath();
-              context.moveTo(this.pos.x, this.pos.y);
-              context.lineTo(this.pos.x + dist*Math.cos(this.heading+angle), 
-                             this.pos.y + dist*Math.sin(this.heading+angle));
-              context.stroke();   
+				var angle = this.start_angle+this.inc*i;
+				var dist = this.val[i];
+				context.beginPath();
+				context.moveTo(this.pos.x, this.pos.y);
+				context.lineTo(this.pos.x + dist*Math.cos(this.heading+angle), 
+                               this.pos.y + dist*Math.sin(this.heading+angle));
+				context.stroke();   
             }
         }
     }

@@ -85,6 +85,33 @@ function lineSegmentIntersection(l1, l2) {
 }
 
 // returns 
+//    1 if lines are parallel and segments overlap 
+//    2 if lines are parallel and segments don’t overlap
+//        or lineIntersection is not on both segments
+//    0 if lineIntersection is on each given line segment, & sets p
+function inplace_lineSegmentIntersection(l1, l2, p) {
+    var res = inplace_lineIntersection(l1, l2, p);
+    
+    if (res == 1) {
+        return 1;
+    }
+	
+    if (res == 2) {
+        if (pointInBoxLine(l1.p1, l2) || pointInBoxLine(l1.p2, l2)) {
+			return 1;
+		} else {
+			return 2;
+		}
+    }
+	
+    if (pointInBoxLine(p, l1) && pointInBoxLine(p, l2)) {
+        return 0;
+    }
+    
+    return 2;
+}
+
+// returns 
 //    true if lines are parallel and overlap, 
 //    false if they are parallel and don’t overlap, 
 //    {x,y} otherwise
@@ -102,8 +129,42 @@ function lineIntersection (l1, l2) {
     return create_point(x, l1.m*x + l1.b);
 }
 
-function create_line_from_vector(point, theta, mag) {
-    //theta = Math.round(100000*theta)/100000;
+// returns 
+//    1 if lines are parallel and overlap, 
+//    2 if they are parallel and don’t overlap, 
+//    0 otherwise, and sets p
+function inplace_lineIntersection (l1, l2, p) {
+    if (l1.m == l2.m) {
+        if (l1.b == l2.b) {
+			return 1;
+		} else {
+			return 2;
+		}
+    }
+    if (l1.isV) {
+		p.x = l1.b;
+		p.y = l2.m*l1.b + l2.b;
+		
+        return 0;
+    }
+    if (l2.isV) {
+		p.x = l2.b;
+		p.y = l1.m*l2.b + l1.b;
+		
+        return 0;
+    }
+	
+    var x = (l2.b - l1.b)/(l1.m - l2.m);
+    p.x = x;
+	p.y = l1.m*x + l1.b;
+	
+	return 0;
+}
+
+function create_line_from_vector(point, theta, mag, roundit) {
+	if (roundit) {
+		theta = Math.round(100000*theta)/100000; // HACK!!!
+	}
     
     var farpoint = create_point(
         point.x+mag*Math.cos(theta), 

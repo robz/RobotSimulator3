@@ -1,7 +1,7 @@
-var NUM_RAYS = 100, ROWS = 100, COLS = 100;
+var NUM_RAYS = 200, ROWS = 60, COLS = 80;
 var CELL_WIDTH, CELL_HEIGHT;
 
-var gridtracer, context, canvas, obstacle_grid;
+var raytracer, context, canvas, obstacle_grid;
 
 window.onload = function() {
     canvas = document.getElementById("canvas");
@@ -10,7 +10,7 @@ window.onload = function() {
 	CELL_WIDTH = canvas.width/COLS;
 	CELL_HEIGHT = canvas.height/ROWS;
     
-    gridtracer = new Gridtracer(COLS, ROWS, CELL_WIDTH, CELL_HEIGHT);
+    raytracer = new Raytracer(COLS, ROWS, CELL_WIDTH, CELL_HEIGHT);
 	
 	obstacle_grid = new Array(ROWS);
 	for (var r = 0; r < ROWS; r++) {
@@ -18,9 +18,6 @@ window.onload = function() {
 		for (var c = 0; c < COLS; c++) {
 			var val = (Math.random() > .9) ? 1 : 0;
 			obstacle_grid[r][c] = val;
-			if (val == 1) {
-				console.log(r, c);
-			}
 		}
 	}
     
@@ -67,11 +64,11 @@ function drawStuff(start) {
 	}
 	
     for (var theta = 0; theta < 360; theta+=360/NUM_RAYS) {
-        gridtracer.trace(start, theta*Math.PI/180, obstacle_grid, 
+        raytracer.trace_grid(start, theta*Math.PI/180, obstacle_grid, 
 			unset_callback, set_callback);
     }
     
-	gridtracer.draw(context);
+	raytracer.draw(context);
 }
 
 

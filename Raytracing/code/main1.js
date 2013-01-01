@@ -1,4 +1,4 @@
-var NUM_TRIANGLES = 100, NUM_RAYS = 1000, ROWS = 15, COLS = 15;
+var NUM_TRIANGLES = 100, NUM_RAYS = 1000, ROWS = 20, COLS = 30;
 
 var raytracer, context, canvas, obstacles;
 
@@ -44,15 +44,19 @@ function mousemove(event) {
 }
 
 function drawStuff(start) {
-    context.fillStyle = "white";
+    context.fillStyle = "lightGray";
     context.fillRect(0, 0, canvas.width, canvas.height);
 	
-    context.strokeStyle = "gray";
+	context.lineWidth = 3;
+    context.strokeStyle = "green";
+	
+	var point = create_point(null, null);
     for (var theta = 0; theta < 360; theta+=360/NUM_RAYS) {
-        var point = raytracer.trace(start, theta*Math.PI/180, 500);
+        point = raytracer.trace_field(start, theta*Math.PI/180, 500, point);
         draw_line(context, start, point);
     }
 	
+	context.lineWidth = 1;
     context.strokeStyle = "black";
 	for (var i = 0; i < obstacles.length; i++) {
 		draw_poly(context, obstacles[i].polygon);
