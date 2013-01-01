@@ -163,7 +163,7 @@ function inplace_lineIntersection (l1, l2, p) {
 
 function create_line_from_vector(point, theta, mag, roundit) {
 	if (roundit) {
-		theta = Math.round(100000*theta)/100000; // HACK!!!
+		theta = Math.round(100000*theta)/100000; // HACK!!! also, happy new year!
 	}
     
     var farpoint = create_point(
