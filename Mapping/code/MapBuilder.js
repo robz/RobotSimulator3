@@ -1,5 +1,7 @@
 var sin = Math.sin, cos = Math.cos, abs = Math.abs;
 
+var MAX_CELL_VAL = 255;
+
 function MapBuilder(x, y, heading, width, map_rows, map_cols) {
 	var state = {pos:{x:x,y:y},heading:heading},
 		grid = new Array(map_rows),
@@ -7,7 +9,7 @@ function MapBuilder(x, y, heading, width, map_rows, map_cols) {
 		visited_grid = new Array(map_rows),
 		col_inc = CANVAS_WIDTH/map_cols,
 		row_inc = CANVAS_HEIGHT/map_rows,
-		gridtracer = new Gridtracer(map_rows, map_cols, col_inc, row_inc);
+		raytracer = new Raytracer(map_rows, map_cols, col_inc, row_inc);
 	
     for (var r = 0; r < map_rows; r++) {
         grid[r] = new Array(map_cols);
@@ -56,15 +58,15 @@ function MapBuilder(x, y, heading, width, map_rows, map_cols) {
 			if (row >= 0 && row < map_rows && col >= 0 && col < map_cols) {
 				if (mag < lidar.MAX_VAL - 1) {
 					grid[row][col] += 2;
-					if (grid[row][col] > 9) {
-						grid[row][col] = 9;
+					if (grid[row][col] > MAX_CELL_VAL) {
+						grid[row][col] = MAX_CELL_VAL;
 					}
 				}
 				
 				temp_grid[row][col] = 1;
 			}
 				
-			gridtracer.trace(pos, angle, temp_grid, 
+			raytracer.trace_grid(pos, angle, temp_grid, 
 				function(r, c) {
 					visited_grid[r][c] = 1;
 					
@@ -118,7 +120,7 @@ function MapBuilder(x, y, heading, width, map_rows, map_cols) {
 					context.fillStyle = "black";
 					context.fillRect(c*col_inc, r*row_inc, col_inc, row_inc);
 					context.fillStyle = "white";
-					context.fillText(grid[r][c]+"", c*col_inc, r*row_inc + row_inc);
+					context.fillText(Math.floor(9*grid[r][c]/(MAX_CELL_VAL))+"", c*col_inc, r*row_inc + row_inc);
                 }
 				
                 if (visited_grid[r][c] == 1) {

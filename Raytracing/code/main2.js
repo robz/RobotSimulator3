@@ -1,7 +1,7 @@
-var NUM_RAYS = 200, ROWS = 60, COLS = 80;
+var NUM_RAYS = 1000, SQUARE_RATIO = .9, ROWS = 60, COLS = 80;
 var CELL_WIDTH, CELL_HEIGHT;
 
-var raytracer, context, canvas, obstacle_grid;
+var raytracer, context, canvas, occupancy_grid, mouse;
 
 window.onload = function() {
     canvas = document.getElementById("canvas");
@@ -11,30 +11,35 @@ window.onload = function() {
 	CELL_HEIGHT = canvas.height/ROWS;
     
     raytracer = new Raytracer(COLS, ROWS, CELL_WIDTH, CELL_HEIGHT);
+	mouse = create_point(null, null);
 	
-	obstacle_grid = new Array(ROWS);
+	occupancy_grid = new Array(ROWS);
 	for (var r = 0; r < ROWS; r++) {
-		obstacle_grid[r] = new Array(COLS);
+		occupancy_grid[r] = new Array(COLS);
 		for (var c = 0; c < COLS; c++) {
-			var val = (Math.random() > .9) ? 1 : 0;
-			obstacle_grid[r][c] = val;
+			var val = (Math.random() > SQUARE_RATIO) ? 1 : 0;
+			occupancy_grid[r][c] = val;
 		}
 	}
-    
+	
 	drawStuff(create_point(canvas.width/2, canvas.height/2));
 }
 
 function mousemove(event) {
-    var mouse = null;
-    
     if (event.offsetX) {
-        mouse = create_point(event.offsetX, event.offsetY);
+        mouse.x = event.offsetX;
+		mouse.y = event.offsetY;
     } else if (event.layerX) {
-        mouse = create_point(event.layerX - canvas.offsetLeft,
-                             event.layerY - canvas.offsetTop);
+        mouse.x = event.layerX - canvas.offsetLeft;
+		mouse.y = event.layerY - canvas.offsetTop;
     } else {
+		console.log("mouse move error!");
         return;
     }
+	
+	if (mouse.y < 0 || mouse.y == canvas.height || mouse.x < 0 || mouse.x == canvas.width) {
+		return;
+	}
     
 	drawStuff(mouse);
 }
@@ -50,13 +55,13 @@ function unset_callback(row, col) {
 }
 
 function drawStuff(start) {
-    context.fillStyle = "lightBlue";
+	context.fillStyle = "lightBlue";
     context.fillRect(0, 0, canvas.width, canvas.height);
 	
     context.fillStyle = "black";
-	for (var r = 0; r < obstacle_grid.length; r++) {
-		for (var c = 0; c < obstacle_grid[0].length; c++) {
-			if (obstacle_grid[r][c] == 1) {
+	for (var r = 0; r < occupancy_grid.length; r++) {
+		for (var c = 0; c < occupancy_grid[0].length; c++) {
+			if (occupancy_grid[r][c] == 1) {
 				context.fillRect(c*CELL_WIDTH, r*CELL_HEIGHT, 
 					CELL_WIDTH, CELL_HEIGHT);
 			}
@@ -64,54 +69,9 @@ function drawStuff(start) {
 	}
 	
     for (var theta = 0; theta < 360; theta+=360/NUM_RAYS) {
-        raytracer.trace_grid(start, theta*Math.PI/180, obstacle_grid, 
+        raytracer.trace_grid(start, theta*Math.PI/180, occupancy_grid, 
 			unset_callback, set_callback);
     }
     
 	raytracer.draw(context);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -82,8 +82,7 @@ function particle_filter(obstacles, dist_sensor, numParticles, startx, starty, r
 	    for(var i = 0; i < list.length; i++) {
 		    var p = list[i];
 		    var actual_dist = this.dist_sensor.getVal(
-			                    p.x, 
-						        p.y, 
+			                    p, 
 						        p.dir + dir, 
 						        obstacles,
 						        p.MAX_RANGE

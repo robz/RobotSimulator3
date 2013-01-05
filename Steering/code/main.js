@@ -22,7 +22,6 @@ window.onload = function()
 	robots = [
 		ackerman_robot(startx, starty, PI/2, 0, 0, width, length, 0, timekeeper),
 		tank_robot(startx, starty, PI/2, 0, 0, width, length, 0, timekeeper),
-		//IGVC_robot(startx, starty, PI/2, 0, 0, 0, timekeeper),
 		crab_robot(startx, starty, PI/2, 0, 0, width, length, 0, timekeeper)
 		];
 
@@ -35,7 +34,7 @@ function keydown(event, index)
 	if (robots[index].type == ACKERMAN || robots[index].type == CRAB) {
 		keydown_ackerman_crab(event, robots[index]);
 	} else if (robots[index].type == TANK) {
-		keydown_test_tank(event, robots[index]);
+		keydown_tank(event, robots[index]);
 	} else if (robots[index].type == COLUMBIA) {
 		keydown_columbia(event, robots[index]);
 	}

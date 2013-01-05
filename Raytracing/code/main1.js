@@ -1,6 +1,6 @@
-var NUM_TRIANGLES = 100, NUM_RAYS = 1000, ROWS = 20, COLS = 30;
+var NUM_TRIANGLES = 100, NUM_RAYS = 1000, RAY_LENGTH = 300, ROWS = 20, COLS = 20;
 
-var raytracer, context, canvas, obstacles;
+var raytracer, context, canvas, obstacles, mouse, temp_point;
 
 window.onload = function() {
     canvas = document.getElementById("canvas");
@@ -23,24 +23,38 @@ window.onload = function() {
         ])));
     }
     
+	temp_point = create_point(null, null);
+	mouse = create_point(null, null);
     raytracer = new Raytracer(COLS, ROWS, canvas.width/COLS, canvas.height/ROWS, obstacles);
     
-    drawStuff(create_point(canvas.width/2, canvas.height/2));
+	drawStuff(create_point(canvas.width/2, canvas.height/2));
+	// setInterval(function(){drawStuffTest(create_point(canvas.width/2, canvas.height/2));}, 1000);
 }
 
 function mousemove(event) {
-    var mouse = null;
     
     if (event.offsetX) {
-        mouse = create_point(event.offsetX, event.offsetY);
+        mouse.x = event.offsetX;
+		mouse.y = event.offsetY;
     } else if (event.layerX) {
-        mouse = create_point(event.layerX - canvas.offsetLeft,
-                             event.layerY - canvas.offsetTop);
+        mouse.x = event.layerX - canvas.offsetLeft;
+		mouse.y = event.layerY - canvas.offsetTop;
     } else {
+		console.log("mouse move error!");
         return;
     }
+	
+	if (mouse.y < 0 || mouse.y == canvas.height || mouse.x < 0 || mouse.x == canvas.width) {
+		return;
+	}
     
 	drawStuff(mouse);
+}
+
+function drawStuffTest(start) {
+	for (var theta = 0; theta < 360; theta+=360/NUM_RAYS) {
+        raytracer.trace_field(start, 0, RAY_LENGTH, temp_point);
+    }
 }
 
 function drawStuff(start) {
@@ -50,10 +64,9 @@ function drawStuff(start) {
 	context.lineWidth = 3;
     context.strokeStyle = "green";
 	
-	var point = create_point(null, null);
     for (var theta = 0; theta < 360; theta+=360/NUM_RAYS) {
-        point = raytracer.trace_field(start, theta*Math.PI/180, 500, point);
-        draw_line(context, start, point);
+		raytracer.trace_field(start, theta*Math.PI/180, RAY_LENGTH, temp_point);
+        draw_line(context, start, temp_point);
     }
 	
 	context.lineWidth = 1;

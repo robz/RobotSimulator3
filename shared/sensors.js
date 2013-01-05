@@ -196,7 +196,7 @@ function lidar_sensor(raytracer, robot, offset_angle, offset_dist, offset_headin
         },
 
         getVal: function(point, dir, max_val) {
-            this.raytracer.trace(point, dir, max_val, this.temp_point);
+            this.raytracer.trace_field(point, dir, max_val, this.temp_point);
             return euclidDist(point, this.temp_point);
         },
 
@@ -218,8 +218,10 @@ function lidar_sensor(raytracer, robot, offset_angle, offset_dist, offset_headin
 function distance_sensor(raytracer, robot, offset_angle, offset_dist, offset_heading, MAX_VAL, rotvel) {
     return {
         raytracer: raytracer,
-        x: robot.x + offset_dist*Math.cos(offset_angle + robot.heading),
-        y: robot.y + offset_dist*Math.sin(offset_angle + robot.heading),
+        pos: create_point(
+			robot.x + offset_dist*Math.cos(offset_angle + robot.heading),
+			robot.y + offset_dist*Math.sin(offset_angle + robot.heading)
+        ),
         heading: robot.heading + offset_heading,
         offset_angle: offset_angle,
         offset_dist: offset_dist,
@@ -227,13 +229,14 @@ function distance_sensor(raytracer, robot, offset_angle, offset_dist, offset_hea
         MAX_VAL: MAX_VAL,
         rotvel: rotvel,
         val: null,
+        temp_point: create_point(0, 0),
 
         update: function(robot, delta_time) {
-            this.x = robot.x + this.offset_dist*Math.cos(this.offset_angle + robot.heading);
-            this.y = robot.y + this.offset_dist*Math.sin(this.offset_angle + robot.heading);
+            this.pos.x = robot.x + this.offset_dist*Math.cos(this.offset_angle + robot.heading);
+            this.pos.y = robot.y + this.offset_dist*Math.sin(this.offset_angle + robot.heading);
             this.offset_heading = (this.offset_heading + this.rotvel*delta_time)%(2*PI);
             this.heading = robot.heading + this.offset_heading; 
-            this.val = this.getVal(this.x, this.y, this.heading, this.MAX_VAL); 
+            this.val = this.getVal(this.pos, this.heading); 
         },
         
         set_offset_angle: function(angle) {
@@ -247,22 +250,24 @@ function distance_sensor(raytracer, robot, offset_angle, offset_dist, offset_hea
             };
         },
 
-        getVal: function(x, y, dir) {
-            var point = create_point(x, y);
-            var res = this.raytracer.trace(point, dir, this.MAX_VAL);
-            return euclidDist(point, res);
+        getVal: function(point, dir) {
+			// console.log(point);
+            this.raytracer.trace_field(point, dir, this.MAX_VAL, this.temp_point);
+            return euclidDist(point, this.temp_point);
         },
 
         draw: function(context, verbose) {
+			var x = this.x, y = this.y, heading = this.heading, val = this.val;
+		
             context.beginPath();
-            context.moveTo(this.x, this.y);
-            context.lineTo(this.x + this.val*Math.cos(this.heading), 
-                           this.y + this.val*Math.sin(this.heading));
+            context.moveTo(x, y);
+            context.lineTo(x + val*Math.cos(heading), 
+                           y + val*Math.sin(heading));
             context.stroke();   
             
             if (verbose) {
-                var dispval = Math.round(this.val*1000)/1000;
-                context.fillText(dispval, this.x, this.y);
+                var dispval = Math.round(val*1000)/1000;
+                context.fillText(dispval, x, y);
             }
         }
     }

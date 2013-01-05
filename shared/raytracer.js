@@ -87,72 +87,63 @@ function Raytracer(cols, rows, cell_width, cell_height, obstacles) {
     }
 	
 	var index_list = [
-		[0, 2, 1, 3],
-		[3, 1, 0, 2],
-		[0, 3, 1, 2],
-		[2, 0, 1, 3],
-		[2, 1, 0, 3]
+		[3, 1],
+		[0, 3],
+		[2, 0],
+		[2, 1]
 	];
+	
+	var intersection = create_point(null, null),
+		closest_intersection = create_point(null, null),
+		temp_point = create_point(null, null),
+		temp_ray = create_line(create_point(0,0), create_point(0,0));
 
 	//
-	// returns false if no next-box is found
-	//                 null if the next-box is outside of the world
-	//                 next-box otherwise, then sets intersection
+	// returns false: if the next-box couldn't be found (error)
+	//		   null: if the next-box is outside of the world
+	//         next-box: otherwise; and sets intersection
 	//
-	var getNextBox = function(ray, box, prev_box, intersection, indexes) {
+	var getNextBox = function(ray, box, intersection, indexes) {
 		var next_box = false,
 			theta = ray.theta,
 			
 			segments = box.segments,
 			adj_boxes = box.adj_boxes;
 		
-		for (var i = 0; i < segments.length; i++) {
+		for (var i = 0; i < indexes.length; i++) {
 			var index = indexes[i],
-				p = lineSegmentIntersection(ray, segments[index]);
+				res = inplace_lineSegmentIntersection(ray, segments[index], temp_point);
 			
-			if (p) {
-				intersection.x = p.x;
-				intersection.y = p.y;
+			if (0 == res) {
+				intersection.x = temp_point.x;
+				intersection.y = temp_point.y;
 				
 				next_box = adj_boxes[index];
-				
-				if (next_box != prev_box) {
-					break;
-				} else {
-					next_box = false;
-				}
+			
+				break;
+			} else {
+			
 			}
 		}
 		
 		return next_box;
 	};
-	
-	var intersection = create_point(null, null),
-		closest_intersection = create_point(null, null),
-		temp_point = create_point(null, null);
     
     this.trace_field = function(start_point, heading, max_dist, closest_intersection) {
 		var row = Math.round(start_point.y/cell_height - .5),
 			col = Math.round(start_point.x/cell_width - .5),
 			box = boxes[row][col],
 			
-			prev_box = null,
-			ray = create_line_from_vector(start_point, heading, 10000, true),
-			count = rows + cols + 1,
 			closest_dist = max_dist,
 			
 			indexes = index_list[0],
-			theta = (ray.theta%TWO_PI + TWO_PI)%TWO_PI;
+			theta = (heading%TWO_PI + TWO_PI)%TWO_PI;
 		
-		if (theta >= 0 && theta <= HALF_PI) {
-			indexes = index_list[1];
-		} else if (theta > HALF_PI && theta <= PI) {
-			indexes = index_list[2];
-		} else if (theta > PI && theta <= 3*HALF_PI) {
-			indexes = index_list[3];
-		} else if (theta > 3*HALF_PI && theta <= TWO_PI) {
-			indexes = index_list[4];
-		} 
+		if (theta > 0) {
+			indexes = index_list[Math.ceil(theta/HALF_PI)-1];
+		}
+		
+		inplace_create_line_from_vector(start_point, theta, 10000, temp_ray, true);
 			
 		intersection.x = start_point.x;
 		intersection.y = start_point.y;
@@ -161,12 +152,12 @@ function Raytracer(cols, rows, cell_width, cell_height, obstacles) {
 		temp_point.x = null;
 		temp_point.y = null;
 		
-		while (box && count > 0) {
-			ray.p1 = intersection;
+		while (box && !box.out_of_range(start_point, max_dist)) {
+			temp_ray.p1 = intersection;
 			edges = box.edges;
 			
 			for (var i = 0; i < edges.length; i++) {
-				var res = inplace_lineSegmentIntersection(ray, edges[i], temp_point);
+				var res = inplace_lineSegmentIntersection(temp_ray, edges[i], temp_point);
 				
 				if (res == 0) {
 					var dist = euclidDist(temp_point, start_point);
@@ -179,14 +170,10 @@ function Raytracer(cols, rows, cell_width, cell_height, obstacles) {
 				}
 			}
 		
-			new_box = getNextBox(ray, box, prev_box, intersection, indexes);
-			prev_box = box;
-			box = new_box;
-			
-			count--;
+			box = getNextBox(temp_ray, box, intersection, indexes);
 		}
 		
-		if (count == 0) {
+		if (false == box) {
 			console.log("yo we got an error up in this raytracing joint.");
 			return null;
 		}
@@ -207,54 +194,46 @@ function Raytracer(cols, rows, cell_width, cell_height, obstacles) {
 	//  a callback that will be called with the (row, col) of every occupied gridcell encountered
 	// returns whether it encountered an occupied gridcell
 	//
-	this.trace_grid = function(start_point, heading, occupancy_grid, unset_callback, set_callback) {
+	this.trace_grid = function(start_point, heading, occupancy_grid, unset_callback, set_callback, intersection_callback) {
 		var row = Math.round(start_point.y/cell_height - .5),
 			col = Math.round(start_point.x/cell_width - .5),
 			box = boxes[row][col],
 			
-			prev_box = null,
-			ray = create_line_from_vector(start_point, heading, 10000, true),
-			count = rows + cols + 1,
-			
 			indexes = index_list[0],
-			theta = (ray.theta%TWO_PI + TWO_PI)%TWO_PI;
+			theta = (heading%TWO_PI + TWO_PI)%TWO_PI;
 		
-		if (theta >= 0 && theta <= HALF_PI) {
-			indexes = index_list[1];
-		} else if (theta > HALF_PI && theta <= PI) {
-			indexes = index_list[2];
-		} else if (theta > PI && theta <= 3*HALF_PI) {
-			indexes = index_list[3];
-		} else if (theta > 3*HALF_PI && theta <= TWO_PI) {
-			indexes = index_list[4];
-		} 
+		if (theta > 0) {
+			indexes = index_list[Math.ceil(theta/HALF_PI)-1];
+		}
+		
+		inplace_create_line_from_vector(start_point, theta, 10000, temp_ray, true),
 			
 		intersection.x = start_point.x;
 		intersection.y = start_point.y;
 		
-		while (box && count > 0) {
+		while (box) {
 			row = box.row;
 			col = box.col;
-			ray.p1 = intersection;
+			temp_ray.p1 = intersection;
 			
-			if (occupancy_grid[row][col] == 1) {
+			if (intersection_callback) {
+				intersection_callback(temp_ray.p1);
+			}
+			
+			if (1 == occupancy_grid[row][col]) {
 				if (set_callback) {
-					set_callback(box.row, box.col);
+					set_callback(row, col);
 				}
 				
 				return true;
-			} else if (unset_callback && occupancy_grid[row][col] == 0) {
-				unset_callback(box.row, box.col);
+			} else if (unset_callback && 0 == occupancy_grid[row][col]) {
+				unset_callback(row, col);
 			}
 			
-			new_box = getNextBox(ray, box, prev_box, intersection, indexes);
-			prev_box = box;
-			box = new_box;
-			
-			count--;
+			box = getNextBox(temp_ray, box, intersection, indexes);
 		}
 		
-		if (count == 0) {
+		if (false == box) {
 			console.log("yo we got an error up in this raytracing joint.");
 			return null;
 		}
@@ -296,6 +275,14 @@ function RTBox(x, y, width, height, row, col) {
     this.containsPoint = function(p) {
 	    return p.x >= x && p.x <= x+width && p.y >= y && p.y <= y+height;
     };
+	
+	var dist_within = 3*(width*width + height*height);
+	
+	this.out_of_range = function(p, d) {
+		var dx = p.x - x,
+			dy = p.y - y;
+		return dx*dx + dy*dy > d*d + dist_within;
+	};
 }
 
 function draw_line(context, p1, p2) {

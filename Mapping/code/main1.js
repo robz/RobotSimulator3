@@ -1,18 +1,18 @@
 var PI = Math.PI, MAX_V = .1, DELTA_ALPHA = PI/20, DELTA_V = .005, CANVAS_WIDTH, CANVAS_HEIGHT, 
     KEY_w = 87, KEY_s = 83, KEY_a = 65, KEY_d = 68, KEY_space = 32, KEY_e = 69, KEY_q = 81;
 
-var canvas, context, perception_context;
-var robot, timekeeper, obstacles, map_builder;
+var canvas, reality_context, perception_context;
+var robot, obstacles, map_builder;
 
-var num_obstacles = 1,
-    obstacle_pad = 20,
+var num_obstacles = 10,
+    obstacle_pad = 30,
     obstacle_radius = 30,
-	raytracecols = 20,  
-    raytracerows = 20,
-    map_builder_period = 30,
+	raytracecols = 15,  
+    raytracerows = 15,
+    map_builder_period = 100,
 	paint_period = 30,
-	RAY_LENGTH = 100,
-	NUM_RAYS = 1000,
+	RAY_LENGTH = 180,
+	NUM_RAYS = 100,
 	MAP_ROWS = 60,
 	MAP_COLS = 60;
 
@@ -21,9 +21,9 @@ window.onload = function()
     canvas = document.getElementById("reality");
     CANVAS_WIDTH = canvas.width;
     CANVAS_HEIGHT = canvas.height;
-	context = canvas.getContext("2d");
+	reality_context = canvas.getContext("2d");
 	perception_context = document.getElementById("perception").getContext("2d");
-    
+
     make_obstacles();
    	make_robot();
    	map_builder = new MapBuilder(robot.x, robot.y, robot.heading, robot.width, MAP_ROWS, MAP_COLS);
@@ -46,7 +46,7 @@ function update_builder() {
                        robot.wheel2_velocity, 
                        robot.lidar_sensor, 
                        dt);
-                       
+	
     setTimeout(update_builder, map_builder_period);
 }
 
@@ -76,42 +76,40 @@ function keydown(event)
         return;
     }
     
-    robot.update();
     robot.accelerate_wheels(delta_wheel1_velocity, delta_wheel2_velocity); 
 }
 
 function paintCanvas() 
-{   
-    perception_context.fillStyle = "lightGray";
+{  
+	perception_context.fillStyle = "lightGray";
     perception_context.fillRect(0, 0, canvas.width, canvas.height);
+	
     map_builder.draw(perception_context);
  
-    context.fillStyle = "lightGray";
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    reality_context.fillStyle = "lightGray";
+    reality_context.fillRect(0, 0, canvas.width, canvas.height);
 	
     robot.update();
 	
-    context.fillStyle = "black";
-    context.strokeStyle = "black";
+    reality_context.fillStyle = "black";
+    reality_context.strokeStyle = "black";
     for (var i = 0; i < robot.sensors.length; i++) {
-        robot.sensors[i].draw(context);
+        robot.sensors[i].draw(reality_context);
     }
     
-    context.strokeStyle = "blue";
-    context.lineWidth = 3;
+    reality_context.strokeStyle = "blue";
+    reality_context.lineWidth = 3;
     for (var i = 0; i < obstacles.length; i++) {
-        obstacles[i].draw(context);
+        obstacles[i].draw(reality_context);
     }
 	
-    context.strokeStyle = "green";
-    robot.draw(context);
+    reality_context.strokeStyle = "green";
+    robot.draw(reality_context);
 	
     setTimeout(paintCanvas, paint_period);
 }
 
 function make_robot() {
-    timekeeper = realtime_timekeeper();
-
     robot = tank_robot(
                 CANVAS_WIDTH/2,
                 CANVAS_HEIGHT/2,
@@ -121,15 +119,16 @@ function make_robot() {
                 40*SCALE, 
                 40*SCALE, 
                 0, 
-                timekeeper
+                realtime_timekeeper()
                 );
     
     var raytracer = new Raytracer(
-                        raytracecols, 
-						raytracerows, 
-                        CANVAS_WIDTH/raytracecols, 
-                        CANVAS_HEIGHT/raytracerows, 
-                        obstacles);
+							raytracecols, 
+							raytracerows, 
+							CANVAS_WIDTH/raytracecols, 
+							CANVAS_HEIGHT/raytracerows, 
+							obstacles
+							);
     
     robot.lidar_sensor = lidar_sensor(
                             raytracer, 
@@ -139,8 +138,8 @@ function make_robot() {
                             0, 
                             RAY_LENGTH, 
                             0, 
-                            0, 
-                            2*PI, 
+                            -PI/2, 
+                            PI/2, 
                             NUM_RAYS
                             );
         
