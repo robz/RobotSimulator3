@@ -231,7 +231,7 @@ function tank_robot(x, y, heading, wheel1_velocity, wheel2_velocity, length, wid
             
 				new_x = x + R*sin(wd + theta) - R*sin(theta);
 				new_y = y - R*cos(wd + theta) + R*cos(theta);
-	    }
+			}
             
             new_heading = new_heading%(2*PI);
             
