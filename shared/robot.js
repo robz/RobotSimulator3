@@ -218,14 +218,12 @@ function tank_robot(x, y, heading, wheel1_velocity, wheel2_velocity, length, wid
                 new_y = y + Vl*dt*sin(theta);
                 new_heading = theta;
             } else {
-                // Credit: Dudek and Jenkin, Computational Principles of Mobile Robotics
                 var R = L*(Vl + Vr)/(2*(Vr - Vl)),
                     wd = dt*(Vr - Vl)/L;
          
-				// new_x = x + R*cos(wd)*sin(theta) + R*sin(wd)*cos(theta) - R*sin(theta);
-                // new_y = y + R*sin(wd)*sin(theta) - R*cos(wd)*cos(theta) + R*cos(theta);
                 new_heading = theta + wd;
 
+				// small angle approximations:
 				// new_x = x + dt*(Vl + Vr)*cos(theta);
 				// new_y = y + dt*(Vl + Vr)*sin(theta);
             
