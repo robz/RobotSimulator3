@@ -18,7 +18,7 @@ function polyIntersectsCircle(poly, circle) {
 // returns intersection of *directed* line segment and circle
 //    if one exists, false otherwise
 function dirLineSegCircleIntersection(line, circle) {
-    var perpline = create_line_from_vector(circle.c, line.theta+Math.PI/2, CANVAS_WIDTH*CANVAS_HEIGHT);
+    var perpline = create_line_from_vector(circle.c, line.theta+Math.PI/2, 999999);
     var p = lineIntersection(line, perpline);
     var d = euclidDist(p, circle.c);
     
