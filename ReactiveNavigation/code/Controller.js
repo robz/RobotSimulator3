@@ -24,11 +24,21 @@ function create_controller(robot, lidar, lineFollower) {
             }
             
             return d;
-        };
+        },
         
-        createDirGap = function (angle1, angle2, dir) {
+        createDirGap = function (curPos, angle1, dist1, angle2, dist2) {
+			var p1 = create_point(curPos.x + dist1*Math.cos(angle1),
+								  curPos.y + dist1*Math.sin(angle1)),
+				p2 = create_point(curPos.x + dist2*Math.cos(angle2),
+								  curPos.y + dist2*Math.sin(angle2)),
+				clearance = euclidDist(p1, p2),
+				
+                xcomp = (Math.cos(angle1) + Math.cos(angle2))/2,
+                ycomp = (Math.sin(angle1) + Math.sin(angle2))/2,
+                dir = my_atan(ycomp, xcomp);
+		
             return {
-                gap: {angle1: angle1, angle2: angle2},
+                clearance: clearance,
                 dir: dir
             };
         },
@@ -37,6 +47,7 @@ function create_controller(robot, lidar, lineFollower) {
             var i, angle, dist, xcomp, ycomp, dir,
                 startGap = false, 
                 endangles = [],
+                enddists = [],
                 scan = lidar.val,
                 scanStartAngle = lidar.start_angle,
                 scanAngleInc = lidar.inc,
@@ -54,34 +65,33 @@ function create_controller(robot, lidar, lineFollower) {
                                  || scan.length - 1 === i)) {
                     startGap = false;
                     endangles.push(angle);
+					enddists.push(dist);
                     endpoints.push(create_point(curPos.x + dist*Math.cos(angle), 
                                                 curPos.y + dist*Math.sin(angle)));
                 } else if (!startGap && Math.abs(dist - scanMaxDist) < MAX_VAL_NOISE_THREASHOLD
                             && scan.length - 1 !== i) {
                     startGap = true;
                     endangles.push(angle);
+					enddists.push(dist);
                     endpoints.push(create_point(curPos.x + dist*Math.cos(angle), 
                                                 curPos.y + dist*Math.sin(angle)));
                 } 
      		}
      		
      		for (i = 0; i < endangles.length; i += 2) {
-                xcomp = (Math.cos(endangles[i]) + Math.cos(endangles[i+1]))/2;
-                ycomp = (Math.sin(endangles[i]) + Math.sin(endangles[i+1]))/2;
-                dir = my_atan(ycomp, xcomp);
-                directionGaps.push(createDirGap(endangles[i], endangles[i+1], dir));
+                directionGaps.push(createDirGap(curPos, endangles[i], enddists[i], endangles[i+1], enddists[i+1]));
             }
      		
      		return directionGaps;
         },
         
-        getGoalGapDirection = function (lidar, goalDir) {
+        getGoalGapDirection = function (lidar, goalDir, curPos) {
             goalDir = (goalDir%(2*Math.PI) + 2*Math.PI)%(2*Math.PI);
             if (goalDir > Math.PI) {
                 goalDir -= 2*Math.PI;
             }
         
-            var i, angle, dist, endangle1, endangle2,
+            var i, angle, dist, endangle1, endangle2, dist1, dist2,
                 scan = lidar.val,
                 
                 scanStartAngle = lidar.start_angle,
@@ -106,7 +116,9 @@ function create_controller(robot, lidar, lineFollower) {
                     
                     break;
                 }
+				
                 endangle1 = scanStartAngle + scanAngleInc*i + scanDir;
+				dist1 = dist;
             }
             
             for (i = goalDirIndex; i >= 0; i--) {
@@ -119,10 +131,12 @@ function create_controller(robot, lidar, lineFollower) {
                     
                     break;
                 }
+				
                 endangle2 = scanStartAngle + scanAngleInc*i + scanDir;
+				dist2 = dist;
             }
             
-            return createDirGap(endangle1, endangle2, goalDir);
+            return createDirGap(curPos, endangle1, dist1, endangle2, dist2);
         },
         
         decideBestDirection = function (directionGaps, curDir, goalDir, curPos, lidar) {
@@ -135,7 +149,7 @@ function create_controller(robot, lidar, lineFollower) {
             for (i = 0; i < directionGaps.length; i++) {
                 dirgap = directionGaps[i];
             
-                clearance = angle_dif(dirgap.gap.angle1, dirgap.gap.angle2)/(2*Math.PI);
+                clearance = dirgap.clearance;
                 heading_alignment = (2*Math.PI - angle_dif(curDir, dirgap.dir))/(2*Math.PI);
                 goal_alignment = (2*Math.PI - angle_dif(goalDir, dirgap.dir))/(2*Math.PI);
                 
@@ -187,7 +201,7 @@ function create_controller(robot, lidar, lineFollower) {
         goalDir = create_line(curPos, goalPos).theta;
         
         // add in (direction, gap) to goal if viable based on scan
-        goalGapDir = getGoalGapDirection(lidar, goalDir);
+        goalGapDir = getGoalGapDirection(lidar, goalDir, curPos);
         
         if (goalGapDir) {
             directionGaps.push(goalGapDir);
