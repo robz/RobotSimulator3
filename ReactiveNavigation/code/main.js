@@ -1,13 +1,9 @@
-var RAYTRACER_COLS = 30, RAYTRACER_ROWS = 30, 
-
+var RAYTRACER_COLS = 20, RAYTRACER_ROWS = 20, 
 	DELTA_V = .05, MAX_V = .1, 
-	
 	SCALE = .5, WHEEL_WIDTH = 4*SCALE, WHEEL_LENGTH = 15*SCALE,
-
+	NUM_OBSTACLES = 10,
     canvas, context,
-    
     lineFollower, controller, robot;
-    
 
 window.onload = function() 
 {
@@ -45,13 +41,13 @@ window.onload = function()
         raytracer,
         robot,
         0,
-        robot.length/2,
+        robot.length, // length placement
         0,
-        100,
+        80, // distance
         0,
         -Math.PI/2,
         Math.PI/2,
-        100
+		50 // num rays
     );  
     	
     robot.sensors = [
@@ -70,31 +66,58 @@ window.onload = function()
 	
 	setInterval(function () { time_keeper.update(10); }, 10);
 	setInterval(function () { controller.makeDecision(); }, 30);
-	setInterval(function () { lineFollower.takeAction(); }, 30);
 	setInterval(paintCanvas, 30);
 };
 
 function create_obstacles() {
-    var r, d, i, seedx, seedy, a1, a2, a3;
+    var r, d, num_sides, vertexes, i, j, seedx, seedy, angle;
 
 	obstacles = [];
   
-    r = 100;
+    r = 40;
     d = 100;
+	num_sides = 15;
     
-    for (i = 0; i < 10; i++) {
+    for (i = 0; i < NUM_OBSTACLES; i++) {
         seedx = Math.random()*(canvas.width - 2*d) + d;
         seedy = Math.random()*(canvas.height - 2*d) + d;
-        a1 = Math.random()*Math.PI*2/3;
-        a2 = Math.random()*Math.PI*2/3;
-        a3 = Math.random()*Math.PI*2/3;
+		
+		vertexes = [];
+		
+		angle = 0;
+		for (j = 0; j < num_sides; j++) {
+			angle += Math.PI*2/num_sides;
+			vertexes.push(create_point(seedx + r*Math.cos(angle), 
+									   seedy + r*Math.sin(angle)));
+		}
         
-        obstacles.push(obstacle(create_polygon([
-            create_point(seedx + r*Math.cos(a1), seedy + r*Math.sin(a1)),
-            create_point(seedx + r*Math.cos(a1+a2), seedy + r*Math.sin(a1+a2)),
-            create_point(seedx + r*Math.cos(a1+a2+a3), seedy + r*Math.sin(a1+a2+a3)),
-        ])));
+        obstacles.push(obstacle(create_polygon(vertexes)));
     }
+	
+	obstacles.push(obstacle(create_polygon([
+		create_point(0, 0),
+        create_point(canvas.width, 0),
+        create_point(canvas.width, 10),
+        create_point(0, 10)
+    ])));
+	obstacles.push(obstacle(create_polygon([
+		create_point(0, 0),
+        create_point(10, 0),
+        create_point(10, canvas.height),
+        create_point(0, canvas.height)
+    ])));
+	obstacles.push(obstacle(create_polygon([
+		create_point(0, canvas.height-10),
+        create_point(0, canvas.height),
+        create_point(canvas.width, canvas.height),
+        create_point(canvas.width, canvas.height-10)
+    ])));
+	obstacles.push(obstacle(create_polygon([
+		create_point(canvas.width - 10, 0),
+        create_point(canvas.width, 0),
+        create_point(canvas.width, canvas.height),
+        create_point(canvas.width - 10, canvas.height)
+    ])));
 }
 
 function clicked(event) {

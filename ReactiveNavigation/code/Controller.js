@@ -1,15 +1,31 @@
+/*
+TODO:
+- special case for continuing to pursue goals despite not enough clearance
+- turning in place in the direction of the goal at the beginning
+- turning 180 degrees in case of a dead end
+- adding a bias weighting actions that would make the robot move in the same 
+	direction as the last decision: this would possibly prevent thrashing
+- fix clearance bug
+- virtually shorten lidar scan to try and avoid hitting obstacles (believe that
+	obstacles are closer than they actually are)
+- add multiple directions for gaps that are large enough
+*/
+
 function create_controller(robot, lidar, lineFollower) {
     var that = {},
         endpoints, dirLines, lineResult,
         goalPos = null,
+		turningTowardsGoal = false,
         
+		LINE_LENGTH = lidar.MAX_VAL + 30,
         GOAL_THREASHOLD = 10,
+		GOAL_DIR_THREASHOLD = Math.PI/10,
         MAX_VAL_NOISE_THREASHOLD = 1e-7,
-        MINIMUM_CLEARANCE = Math.PI/5,
+        MINIMUM_CLEARANCE = robot.width + 10,
         WEIGHTS = {
-            CLEARANCE: 0,
-            HEADING_ALIGNMENT: 0,
-            GOAL_ALIGNMENT: 1
+            CLEARANCE: .3,
+            HEADING_ALIGNMENT: .1,
+            GOAL_ALIGNMENT: .6
         },
         
         angle_dif = function (a1, a2) {
@@ -25,29 +41,36 @@ function create_controller(robot, lidar, lineFollower) {
             
             return d;
         },
-        
-        createDirGap = function (curPos, angle1, dist1, angle2, dist2) {
-			var p1 = create_point(curPos.x + dist1*Math.cos(angle1),
-								  curPos.y + dist1*Math.sin(angle1)),
-				p2 = create_point(curPos.x + dist2*Math.cos(angle2),
-								  curPos.y + dist2*Math.sin(angle2)),
-				clearance = euclidDist(p1, p2),
-				
-                xcomp = (Math.cos(angle1) + Math.cos(angle2))/2,
-                ycomp = (Math.sin(angle1) + Math.sin(angle2))/2,
-                dir = my_atan(ycomp, xcomp);
 		
-            return {
-                clearance: clearance,
-                dir: dir
+		calcClearance = function (curPos, angle1, dist1, angle2, dist2) {
+			var dist = Math.min(dist1, dist2),
+				p1 = create_point(curPos.x + dist*Math.cos(angle1),
+								  curPos.y + dist*Math.sin(angle1)),
+				p2 = create_point(curPos.x + dist*Math.cos(angle2),
+								  curPos.y + dist*Math.sin(angle2));
+				
+			return euclidDist(p1, p2);
+		},
+		
+		averageAngle = function (angle1, angle2) {
+            var xcomp = (Math.cos(angle1) + Math.cos(angle2))/2,
+                ycomp = (Math.sin(angle1) + Math.sin(angle2))/2;
+		
+            return my_atan(ycomp, xcomp);
+		},
+        
+        createDirGap = function (dir, clearance) {
+			return {
+                dir: dir,
+                clearance: clearance
             };
         },
         
         getViableScanDirectionGaps = function (lidar, curPos) {
-            var i, angle, dist, xcomp, ycomp, dir,
+            var i, angle, dist, dir,
                 startGap = false, 
                 endangles = [],
-                enddists = [],
+				enddists = [],
                 scan = lidar.val,
                 scanStartAngle = lidar.start_angle,
                 scanAngleInc = lidar.inc,
@@ -77,66 +100,88 @@ function create_controller(robot, lidar, lineFollower) {
                                                 curPos.y + dist*Math.sin(angle)));
                 } 
      		}
-     		
+			
      		for (i = 0; i < endangles.length; i += 2) {
-                directionGaps.push(createDirGap(curPos, endangles[i], enddists[i], endangles[i+1], enddists[i+1]));
+				dir = averageAngle(endangles[i], endangles[i+1]);
+				clearance = calcClearance(curPos, endangles[i], enddists[i], 
+												  endangles[i+1], enddists[i+1])
+                directionGaps.push(createDirGap(dir, clearance));
             }
      		
      		return directionGaps;
         },
         
-        getGoalGapDirection = function (lidar, goalDir, curPos) {
-            goalDir = (goalDir%(2*Math.PI) + 2*Math.PI)%(2*Math.PI);
-            if (goalDir > Math.PI) {
-                goalDir -= 2*Math.PI;
-            }
-        
-            var i, angle, dist, endangle1, endangle2, dist1, dist2,
+        getGoalGapDirection = function (lidar, goalDir, curPos, distanceToGoal) {
+            var i, angle, dist, endangle, endangle1, endangle2, dist1, dist2, 
+				goalDist, goalDirIndex, clearance,
                 scan = lidar.val,
-                
                 scanStartAngle = lidar.start_angle,
                 scanAngleInc = lidar.inc,
                 scanMaxDist = lidar.MAX_VAL,
                 scanDir = lidar.heading,
+				scanRange = lidar.end_angle - lidar.start_angle,
                 
-                goalDirIndex = Math.round((goalDir - scanStartAngle - scanDir) / scanAngleInc),
-                numIndexes = Math.round(MINIMUM_CLEARANCE/2/lidar.inc);
-                
-            if (goalDirIndex < 0 || goalDirIndex >= scan.length) {
-                return createDirGap(goalDir-MINIMUM_CLEARANCE, goalDir+MINIMUM_CLEARANCE, goalDir);
+				theta = (scanDir%(2*Math.PI) + 2*Math.PI)%(2*Math.PI),
+				phi = ((goalDir - theta)%(2*Math.PI) + 2*Math.PI)%(2*Math.PI);
+           
+			if (phi > Math.PI) {
+                phi -= 2*Math.PI;
             }
+			
+			goalDirIndex = Math.round((phi + scanRange/2) / scanAngleInc);
             
-            for (i = goalDirIndex; i < scan.length; i++) {
+			// out of lidar range, so just assume a minimum clearance
+            if (goalDirIndex < 0 || goalDirIndex >= scan.length) {
+				return false;// createDirGap(goalDir, MINIMUM_CLEARANCE);
+            }
+			
+			goalDist = scan[goalDirIndex];
+			
+			// there is no gap in the direction of the goal
+			if (Math.abs(goalDist - scanMaxDist) > MAX_VAL_NOISE_THREASHOLD) {
+				// and the goal isn't closer than the next obstacle
+				if (goalDist > distanceToGoal) {
+					return createDirGap(goalDir, MINIMUM_CLEARANCE);
+				} else {
+					return false;
+				}
+			}
+            
+            for (i = goalDirIndex + 1; i < scan.length; i++) {
                 dist = scan[i];
+				endangle = scanStartAngle + scanAngleInc*i + scanDir;
                 
                 if (Math.abs(dist - scanMaxDist) > MAX_VAL_NOISE_THREASHOLD) {
-                    if (i <= goalDirIndex + numIndexes) {
-                        return false;
-                    }
-                    
                     break;
                 }
 				
-                endangle1 = scanStartAngle + scanAngleInc*i + scanDir;
+                endangle1 = endangle;
 				dist1 = dist;
             }
-            
-            for (i = goalDirIndex; i >= 0; i--) {
+			
+            if (i != scan.length
+				&& calcClearance(curPos, goalDir, goalDist, endangle1, dist1) < MINIMUM_CLEARANCE/2) {
+				return false;
+            }
+                    
+            for (i = goalDirIndex - 1; i >= 0; i--) {
                 dist = scan[i];
+                endangle = scanStartAngle + scanAngleInc*i + scanDir;
                 
                 if (Math.abs(dist - scanMaxDist) > MAX_VAL_NOISE_THREASHOLD) {
-                    if (i >= goalDirIndex - numIndexes) {
-                        return false;
-                    }
-                    
                     break;
                 }
 				
-                endangle2 = scanStartAngle + scanAngleInc*i + scanDir;
+                endangle2 = endangle;
 				dist2 = dist;
             }
-            
-            return createDirGap(curPos, endangle1, dist1, endangle2, dist2);
+			
+            if (i != -1 
+				&& calcClearance(curPos, goalDir, goalDist, endangle2, dist2) < MINIMUM_CLEARANCE/2) {
+				return false;
+            }
+			
+            return createDirGap(goalDir, calcClearance(curPos, endangle1, dist1, endangle2, dist2));
         },
         
         decideBestDirection = function (directionGaps, curDir, goalDir, curPos, lidar) {
@@ -149,16 +194,16 @@ function create_controller(robot, lidar, lineFollower) {
             for (i = 0; i < directionGaps.length; i++) {
                 dirgap = directionGaps[i];
             
-                clearance = dirgap.clearance;
+                clearance = dirgap.clearance/(2*LINE_LENGTH);
                 heading_alignment = (2*Math.PI - angle_dif(curDir, dirgap.dir))/(2*Math.PI);
                 goal_alignment = (2*Math.PI - angle_dif(goalDir, dirgap.dir))/(2*Math.PI);
                 
                 score = clearance * WEIGHTS.CLEARANCE
                       + heading_alignment * WEIGHTS.HEADING_ALIGNMENT
                       + goal_alignment * WEIGHTS.GOAL_ALIGNMENT;
-                
-                if (clearance*Math.PI*2 > MINIMUM_CLEARANCE) {
-                    dirLines.push(create_line_from_vector(curPos, dirgap.dir, lidar.MAX_VAL + 30));
+				
+				if (clearance >= MINIMUM_CLEARANCE/(2*LINE_LENGTH)) {
+                    dirLines.push(create_line_from_vector(curPos, dirgap.dir, LINE_LENGTH));
                 
                     if (score > bestScore) {
                         bestScore = score;
@@ -168,7 +213,68 @@ function create_controller(robot, lidar, lineFollower) {
             }
             
             return bestDir;
-        };
+        },
+		
+		navigateNormally = function () {
+			var i, curPos, scan, directionGaps, goalDir, goalGapDir, bestDir, distanceToGoal;
+
+			curPos = lidar.pos;
+			curDir = robot.heading;
+
+			// return if the current position is close enough to the goal
+			if (euclidDist(goalPos, curPos) < GOAL_THREASHOLD) {
+				lineFollower.follow(null);
+				lineFollower.takeAction();
+				return;
+			}
+
+			// find viable (direction, gap) pairs from lidar + current heading
+			directionGaps = getViableScanDirectionGaps(lidar, curPos);
+
+			// calculate goal direction and distance
+			goalDir = create_line(curPos, goalPos).theta;
+			distanceToGoal = euclidDist(curPos, goalPos);
+			
+			// add in (direction, gap) to goal if viable based on scan
+			goalGapDir = getGoalGapDirection(lidar, goalDir, curPos, distanceToGoal);
+			
+			if (goalGapDir) {
+				directionGaps.push(goalGapDir);
+			}
+			
+			// choose best (direction, gap) based on...
+			//      clearance, closeness to goal direction, closeness to current position
+			bestDir = decideBestDirection(directionGaps, curDir, goalDir, curPos, lidar);
+			
+			// create line from direction
+			if (null !== bestDir) {
+				lineResult = create_line_from_vector(curPos, bestDir, LINE_LENGTH);
+			} else {
+				lineResult = null;
+			}
+			
+			// send line to lineFollower
+			lineFollower.follow(lineResult);
+			lineFollower.takeAction();
+		},
+		
+		turnTowardsGoal = function () {
+			var curDir, curPos, goalDir;
+
+			curPos = lidar.pos;
+			curDir = robot.heading;
+			goalDir = create_line(curPos, goalPos).theta;
+
+			// return if we're facing the goal
+			console.log(angle_dif(curDir, goalDir));
+			
+			if (angle_dif(curDir, goalDir) < GOAL_DIR_THREASHOLD) {
+				turningTowardsGoal = false;
+				return;
+			}
+			
+			robot.set_wheel_velocities(-MAX_V/2, MAX_V/2);
+		};
     
     that.getGoal = function () {
         return goalPos;
@@ -176,50 +282,30 @@ function create_controller(robot, lidar, lineFollower) {
     
     that.setGoal = function (newGoal) {
         goalPos = create_point(newGoal.x, newGoal.y);
+        dirLines = [];
+		endpoints = [];
+		lineResult = null;
+		turningTowardsGoal = true;
     };
     
     that.makeDecision = function () {
-        var i, curPos, scan, directionGaps, goalDir, goalGapDir, bestDir;
-    
+        var i, curPos, scan, directionGaps, goalDir, goalGapDir, bestDir, distanceToGoal;
+
         if (!goalPos) {
             return;
         }
-        
-        curDir = robot.heading;
-        curPos = robot.get_centerpoint();
-        
-        // return if the current position is close enough to the goal
-        if (euclidDist(goalPos, curPos) < GOAL_THREASHOLD) {
-            lineFollower.follow(null);
-            return;
-        }
-    
-        // find viable (direction, gap) pairs from lidar + current heading
-        directionGaps = getViableScanDirectionGaps(lidar, curPos);
-        
-        // calculate goal direction
-        goalDir = create_line(curPos, goalPos).theta;
-        
-        // add in (direction, gap) to goal if viable based on scan
-        goalGapDir = getGoalGapDirection(lidar, goalDir, curPos);
-        
-        if (goalGapDir) {
-            directionGaps.push(goalGapDir);
-        }
-        
-        // choose best (direction, gap) based on...
-        //      clearance, closeness to goal direction, closeness to current position
-        bestDir = decideBestDirection(directionGaps, curDir, goalDir, curPos, lidar);
-        
-        // create line from direction
-        if (null !== bestDir) {
-            lineResult = create_line_from_vector(curPos, bestDir, lidar.MAX_VAL + 30);
-        } else {
-            lineResult = null;
-        }
-        
-        // send line to lineFollower
-        lineFollower.follow(lineResult);
+		
+		navigateNormally();
+		
+		/*
+		if (turningTowardsGoal) {
+			turnTowardsGoal();
+		//} else if (turningOutOfDeadEnd) {
+		//	navigateOutOfDeadEnd();
+		} else {
+			navigateNormally();
+		}
+		*/
     };
     
     that.draw = function () {

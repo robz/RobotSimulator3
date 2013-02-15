@@ -1,7 +1,7 @@
 function create_lineFollower(robot) {
     var that = {},
         curLine,
-        p = 4, d = .01, i = 0,
+        p = 10, d = 2, i = 0,
         old_error, pid_sum = 0,
         
         getCrossCheckError = function(robot, line) {
