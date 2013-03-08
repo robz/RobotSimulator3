@@ -23,7 +23,7 @@ function create_controller(robot, lidar, lineFollower) {
         MAX_VAL_NOISE_THREASHOLD = 1e-7,
         MINIMUM_CLEARANCE = robot.width + 10,
         WEIGHTS = {
-            CLEARANCE: .3,
+            CLEARANCE: 0,
             HEADING_ALIGNMENT: .1,
             GOAL_ALIGNMENT: .6
         },
@@ -106,6 +106,29 @@ function create_controller(robot, lidar, lineFollower) {
 				clearance = calcClearance(curPos, endangles[i], enddists[i], 
 												  endangles[i+1], enddists[i+1])
                 directionGaps.push(createDirGap(dir, clearance));
+            }
+            
+            var numExtraGaps, delta_dir;
+            
+            for (i = 0; i < directionGaps.length; i++) {
+            	numExtraGaps = Math.floor(directionGaps[i].clearance/MINIMUM_CLEARANCE);
+            	
+            	if (numExtraGaps > 1) {
+            		/*
+            		delta_dir = angle_dif(endangles[i*2], endangles[i*2+1]);
+            		dir1 = endangles[i*2] + delta_dir/3;
+            		dir2 = endangles[i*2] + 2*delta_dir/3;
+            		directionGaps.push(createDirGap(dir1, directionGaps[i].clearance*2/3));
+            		directionGaps.push(createDirGap(dir2, directionGaps[i].clearance*2/3));
+            		*/
+            		
+            		delta_dir = angle_dif(endangles[i*2], endangles[i*2+1]);
+            		
+            		for (j = 0; j < numExtraGaps; j++) {
+            			dir = endangles[i*2] + (j+1)*delta_dir/(numExtraGaps + 1);
+            			directionGaps.push(createDirGap(dir, directionGaps[i].clearance*numExtraGaps/(numExtraGaps+1)));
+            		}
+            	}
             }
      		
      		return directionGaps;
