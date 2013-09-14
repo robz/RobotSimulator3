@@ -1,1 +1,1 @@
-{}
+{<apost>3619809<apost>:{<apost>vel1<apost>:0,<apost>vel2<apost>:0,<apost>x<apost>:362.6608146685266,<apost>y<apost>:204.19625515356248,<apost>dir<apost>:-1.2733146928203596},<apost>8260253<apost>:{<apost>vel1<apost>:0,<apost>vel2<apost>:0,<apost>x<apost>:394.83665949844715,<apost>y<apost>:176.68769191321974,<apost>dir<apost>:3.844814692820343}}
