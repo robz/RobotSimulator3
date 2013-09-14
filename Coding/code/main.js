@@ -80,12 +80,10 @@ function init_robot(obstacles) {
     robot = tank_robot(startx, starty, PI/2, 0, 0, width, length, 0, timekeeper);
     robot.obstacles = obstacles;
     robot.distance_sensor = distance_sensor(raytracer, robot, 0, robot.length/2, 0, 500, 0);
-    robot.lidar_sensor = lidar_sensor(raytracer, robot, 0, robot.length/2, 0, 500, 0, -PI, PI, 100);
     robot.line_sensor = line_sensor(line_strip(linesensor_points), robot, 0, robot.length, robot.width*2/3, 8);
     robot.sensors = [
         robot.distance_sensor,
         robot.line_sensor,
-        robot.lidar_sensor
     ];
 
     setInterval("timekeeper.update(10);", 10);
@@ -122,9 +120,8 @@ function pauseBtnClicked(event)
 function keydown(event) 
 {
     var key = event.which;
-    
     var delta_wheel1_velocity = 0, delta_wheel2_velocity = 0;
-    
+   
     if (key == KEY_w) {
         delta_wheel1_velocity = DELTA_V;
         delta_wheel2_velocity = DELTA_V;
@@ -140,6 +137,7 @@ function keydown(event)
     } else if (key == KEY_space) {
         delta_wheel1_velocity = -robot.wheel1_velocity;
         delta_wheel2_velocity = -robot.wheel2_velocity;
+        event.preventDefault();
     } else {
         return;
     }
